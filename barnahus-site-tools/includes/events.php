@@ -337,6 +337,7 @@ function barnahus_render_events_dashboard_page() {
     $archived_events = array_values(array_filter($events, function ($event) {
         return barnahus_event_is_archived($event->ID);
     }));
+    $dashboard_events = array_merge($active_events, $archived_events);
 
     ?>
     <div class="wrap">
@@ -452,6 +453,15 @@ function barnahus_render_events_dashboard_page() {
             .barnahus-event-dashboard-create {
                 margin: 16px 0;
                 border-left: 4px solid #aeb9ee;
+            }
+
+            .barnahus-event-dashboard-create summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+
+            .barnahus-event-dashboard-create form {
+                margin-top: 14px;
             }
 
             .barnahus-event-dashboard-history {
@@ -640,9 +650,292 @@ function barnahus_render_events_dashboard_page() {
                 margin-top: 10px;
             }
 
+            .barnahus-event-dashboard-shell {
+                display: grid;
+                grid-template-columns: 300px minmax(0, 1fr);
+                gap: 0;
+                max-width: 1500px;
+                background: #fff;
+                border: 1px solid #c3c4c7;
+            }
+
+            .barnahus-event-dashboard-tabs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0;
+                max-width: 1500px;
+                margin-top: 16px;
+                border: 1px solid #c3c4c7;
+                border-bottom: 0;
+                background: #fff;
+                padding: 0 16px;
+            }
+
+            .barnahus-event-dashboard-tab {
+                border: 0;
+                border-bottom: 3px solid transparent;
+                background: transparent;
+                color: #646970;
+                cursor: pointer;
+                font-weight: 600;
+                padding: 13px 14px 10px;
+            }
+
+            .barnahus-event-dashboard-tab.is-active {
+                border-bottom-color: #3858e9;
+                color: #1d2327;
+            }
+
+            .barnahus-event-dashboard-tab__count {
+                color: #646970;
+                font-weight: 400;
+            }
+
+            .barnahus-event-dashboard-sidebar {
+                display: grid;
+                align-content: start;
+                gap: 12px;
+                border-right: 1px solid #dcdcde;
+                background: #f6f7f7;
+                padding: 16px;
+            }
+
+            .barnahus-event-dashboard-search {
+                width: 100%;
+                min-height: 36px;
+            }
+
+            .barnahus-event-dashboard-list {
+                display: grid;
+                gap: 8px;
+                max-height: 780px;
+                overflow: auto;
+                padding-right: 2px;
+            }
+
+            .barnahus-event-dashboard-list__item {
+                display: grid;
+                gap: 4px;
+                width: 100%;
+                border: 1px solid transparent;
+                background: #fff;
+                color: #1d2327;
+                cursor: pointer;
+                padding: 10px;
+                text-align: left;
+            }
+
+            .barnahus-event-dashboard-list__item:hover,
+            .barnahus-event-dashboard-list__item.is-active {
+                border-color: #3858e9;
+                box-shadow: inset 3px 0 0 #3858e9;
+            }
+
+            .barnahus-event-dashboard-list__title {
+                font-weight: 600;
+            }
+
+            .barnahus-event-dashboard-list__meta {
+                color: #646970;
+                font-size: 12px;
+            }
+
+            .barnahus-event-dashboard-editor {
+                min-width: 0;
+                background: #fff;
+            }
+
+            .barnahus-event-dashboard {
+                max-width: none;
+            }
+
+            .barnahus-event-dashboard-card {
+                display: none;
+                border: 0;
+                border-bottom: 1px solid #dcdcde;
+                padding: 0;
+            }
+
+            .barnahus-event-dashboard-card.is-active {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 380px;
+                min-height: 720px;
+            }
+
+            .barnahus-event-dashboard-card__main {
+                display: grid;
+                align-content: start;
+                gap: 18px;
+                padding: 24px;
+            }
+
+            .barnahus-event-dashboard-card__inspector {
+                display: grid;
+                align-content: start;
+                gap: 16px;
+                border-left: 1px solid #dcdcde;
+                background: #fbfbfc;
+                padding: 18px;
+            }
+
+            .barnahus-event-dashboard-card__preview {
+                max-width: 700px;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-card {
+                display: grid;
+                grid-template-columns: 50px minmax(0, 1fr);
+                gap: 14px;
+                min-height: 340px;
+                box-sizing: border-box;
+                background: rgba(255, 255, 255, 0.64);
+                border: 1px solid transparent;
+                padding: 18px;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-card {
+                min-height: 340px;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-card.is-featured.is-pinned {
+                background: rgba(174, 185, 238, 0.24);
+                border-color: rgba(174, 185, 238, 0.72);
+                border-top: 3px solid #8f9fe8;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-date {
+                display: block;
+                border-right: 1px solid rgba(17, 17, 17, 0.12);
+                color: #111;
+                font-weight: 800;
+                padding-right: 11px;
+                text-decoration: none;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-day,
+            .barnahus-event-dashboard-card__preview .bh-event-month {
+                display: block;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-day {
+                font-size: 29px;
+                line-height: 1;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-month {
+                margin-top: 4px;
+                font-size: 12px;
+                text-transform: uppercase;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-content {
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                margin: 0 0 10px;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-tag {
+                display: inline-flex;
+                min-height: 20px;
+                align-items: center;
+                border: 1px solid rgba(174, 185, 238, 0.72);
+                background: rgba(217, 222, 244, 0.72);
+                color: #2d2d2d;
+                font-size: 11px;
+                font-weight: 700;
+                line-height: 1.2;
+                padding: 1px 6px;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-tag--status {
+                border-color: rgba(17, 17, 17, 0.14);
+                background: rgba(255, 255, 255, 0.6);
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-title {
+                margin: 0 0 7px;
+                font-size: 19px;
+                line-height: 1.18;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-meta,
+            .barnahus-event-dashboard-card__preview .bh-event-description {
+                margin: 0;
+                color: #3c434a;
+                font-family: Georgia, "Times New Roman", serif;
+                font-size: 16px;
+                line-height: 1.48;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-description {
+                margin-top: 8px;
+                color: #111;
+            }
+
+            .barnahus-event-dashboard-card__preview .bh-event-link {
+                display: inline-block;
+                width: fit-content;
+                margin-top: auto;
+                border-bottom: 2px solid currentColor;
+                color: #111;
+                font-weight: 800;
+                text-decoration: none;
+            }
+
+            .barnahus-event-dashboard-card__plain-link {
+                display: inline-flex;
+                width: fit-content;
+                color: #3858e9;
+                font-weight: 500;
+                text-decoration: none;
+                word-break: break-word;
+            }
+
+            .barnahus-event-dashboard-card__plain-link:hover {
+                color: #1e3a8a;
+                text-decoration: underline;
+            }
+
+            .barnahus-event-dashboard-empty {
+                border: 0;
+                padding: 24px;
+            }
+
+            .barnahus-event-dashboard-savebar {
+                position: sticky;
+                bottom: 0;
+                z-index: 2;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                align-items: center;
+                justify-content: flex-end;
+                border-top: 1px solid #c3c4c7;
+                background: rgba(255, 255, 255, .96);
+                padding: 12px 16px;
+            }
+
             @media (max-width: 782px) {
                 .barnahus-event-dashboard-card__full {
                     grid-column: auto;
+                }
+
+                .barnahus-event-dashboard-shell,
+                .barnahus-event-dashboard-card.is-active {
+                    grid-template-columns: 1fr;
+                }
+
+                .barnahus-event-dashboard-sidebar,
+                .barnahus-event-dashboard-card__inspector {
+                    border-left: 0;
+                    border-right: 0;
                 }
             }
         </style>
@@ -702,7 +995,9 @@ function barnahus_render_events_dashboard_page() {
             </details>
         <?php endif; ?>
 
-        <form class="barnahus-event-dashboard-create" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <details class="barnahus-event-dashboard-create">
+            <summary>Add planned event card</summary>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="barnahus_create_event_from_dashboard">
             <?php wp_nonce_field('barnahus_create_event_from_dashboard', 'barnahus_create_event_nonce'); ?>
 
@@ -785,17 +1080,69 @@ function barnahus_render_events_dashboard_page() {
 
             <?php submit_button('Create event card', 'secondary', 'submit', false); ?>
         </form>
+        </details>
 
         <form id="barnahus-event-dashboard-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="barnahus_save_events_dashboard">
             <?php wp_nonce_field('barnahus_save_events_dashboard', 'barnahus_events_dashboard_nonce'); ?>
 
-            <div class="barnahus-event-dashboard">
-                <?php if (!$active_events) : ?>
-                    <div class="barnahus-event-dashboard-card">No active Barnahus events found.</div>
+            <div class="barnahus-event-dashboard-tabs" role="tablist" aria-label="Filter events">
+                <button class="barnahus-event-dashboard-tab is-active" type="button" data-event-filter="active">Active <span class="barnahus-event-dashboard-tab__count"><?php echo esc_html(count($active_events)); ?></span></button>
+                <button class="barnahus-event-dashboard-tab" type="button" data-event-filter="featured">Featured <span class="barnahus-event-dashboard-tab__count"><?php echo esc_html(count(array_filter($active_events, function ($event) { return get_post_meta($event->ID, '_barnahus_event_featured', true) === '1'; }))); ?></span></button>
+                <button class="barnahus-event-dashboard-tab" type="button" data-event-filter="pinned">Pinned <span class="barnahus-event-dashboard-tab__count"><?php echo esc_html(count(array_filter($active_events, function ($event) { return barnahus_is_event_pinned($event->ID); }))); ?></span></button>
+                <button class="barnahus-event-dashboard-tab" type="button" data-event-filter="tba">TBA <span class="barnahus-event-dashboard-tab__count"><?php echo esc_html(count(array_filter($active_events, function ($event) { return !get_post_meta($event->ID, '_barnahus_event_date', true); }))); ?></span></button>
+                <button class="barnahus-event-dashboard-tab" type="button" data-event-filter="archive">Archive <span class="barnahus-event-dashboard-tab__count"><?php echo esc_html(count($archived_events)); ?></span></button>
+            </div>
+
+            <div class="barnahus-event-dashboard-shell">
+                <aside class="barnahus-event-dashboard-sidebar">
+                    <input class="barnahus-event-dashboard-search" type="search" placeholder="Search events" aria-label="Search events" data-event-search>
+                    <div class="barnahus-event-dashboard-list" data-event-list>
+                        <?php foreach ($dashboard_events as $event) : ?>
+                            <?php
+                            $list_post_id = $event->ID;
+                            $list_date = get_post_meta($list_post_id, '_barnahus_event_date', true);
+                            $list_start_time = get_post_meta($list_post_id, '_barnahus_event_start_time', true);
+                            $list_end_time = get_post_meta($list_post_id, '_barnahus_event_end_time', true);
+                            $list_location = barnahus_get_event_location($list_post_id);
+                            $list_featured = get_post_meta($list_post_id, '_barnahus_event_featured', true) === '1';
+                            $list_pinned = barnahus_is_event_pinned($list_post_id);
+                            $list_archived = barnahus_event_is_archived($list_post_id);
+                            $list_tba = !$list_date;
+                            $list_filters = array($list_archived ? 'archive' : 'active');
+
+                            if (!$list_archived && $list_featured) {
+                                $list_filters[] = 'featured';
+                            }
+
+                            if (!$list_archived && $list_pinned) {
+                                $list_filters[] = 'pinned';
+                            }
+
+                            if (!$list_archived && $list_tba) {
+                                $list_filters[] = 'tba';
+                            }
+                            ?>
+                            <button class="barnahus-event-dashboard-list__item" type="button" data-event-list-item data-event-id="<?php echo esc_attr($list_post_id); ?>" data-event-filters="<?php echo esc_attr(implode(' ', $list_filters)); ?>" data-event-search-text="<?php echo esc_attr(strtolower(get_the_title($event) . ' ' . implode(' ', barnahus_get_event_series_names($list_post_id)) . ' ' . barnahus_format_event_dashboard_meta($list_date, $list_start_time, $list_end_time, $list_location))); ?>">
+                                <span class="barnahus-event-dashboard-list__title"><?php echo esc_html(get_the_title($event)); ?></span>
+                                <span class="barnahus-event-dashboard-list__meta">
+                                    <?php echo esc_html(barnahus_format_event_dashboard_meta($list_date, $list_start_time, $list_end_time, $list_location)); ?>
+                                    <?php if ($list_featured) : ?> · Featured<?php endif; ?>
+                                    <?php if ($list_pinned) : ?> · Pinned<?php endif; ?>
+                                    <?php if ($list_archived) : ?> · Archived<?php endif; ?>
+                                </span>
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
+                </aside>
+
+                <div class="barnahus-event-dashboard-editor">
+                    <div class="barnahus-event-dashboard">
+                        <?php if (!$dashboard_events) : ?>
+                            <div class="barnahus-event-dashboard-empty">No Barnahus events found.</div>
                 <?php endif; ?>
 
-                <?php foreach ($active_events as $event) : ?>
+                <?php foreach ($dashboard_events as $event) : ?>
                     <?php
                     $post_id = $event->ID;
                     $date = get_post_meta($post_id, '_barnahus_event_date', true);
@@ -815,8 +1162,22 @@ function barnahus_render_events_dashboard_page() {
                     $registration_status = get_post_meta($post_id, '_barnahus_event_registration_status', true);
                     $series = barnahus_get_event_series_names($post_id);
                     $excerpt = get_the_excerpt($event);
+                    $event_filters = array($archived ? 'archive' : 'active');
+
+                    if (!$archived && $featured) {
+                        $event_filters[] = 'featured';
+                    }
+
+                    if (!$archived && $pinned) {
+                        $event_filters[] = 'pinned';
+                    }
+
+                    if (!$archived && !$date) {
+                        $event_filters[] = 'tba';
+                    }
                     ?>
-                    <section class="barnahus-event-dashboard-card">
+                    <section class="barnahus-event-dashboard-card" data-event-panel data-event-id="<?php echo esc_attr($post_id); ?>" data-event-filters="<?php echo esc_attr(implode(' ', $event_filters)); ?>">
+                        <div class="barnahus-event-dashboard-card__main">
                         <div class="barnahus-event-dashboard-card__header">
                             <div>
                                 <h2 class="barnahus-event-dashboard-card__title"><?php echo esc_html(get_the_title($event)); ?></h2>
@@ -838,6 +1199,12 @@ function barnahus_render_events_dashboard_page() {
                             </div>
                         </div>
 
+                        <div class="barnahus-event-dashboard-card__preview">
+                            <?php echo barnahus_render_event_card($event, array('variant' => 'quiet', 'description_words' => 28)); ?>
+                        </div>
+                        </div>
+
+                        <div class="barnahus-event-dashboard-card__inspector">
                         <div class="barnahus-event-dashboard-card__fields">
                             <div class="barnahus-event-dashboard-card__field barnahus-event-dashboard-card__full">
                                 <label for="barnahus_event_title_<?php echo esc_attr($post_id); ?>">Event title</label>
@@ -909,12 +1276,11 @@ function barnahus_render_events_dashboard_page() {
 
                                     <div class="barnahus-event-dashboard-card__field">
                                         <label for="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>">Luma URL</label>
-                                        <div class="barnahus-event-dashboard-card__url-row">
-                                            <input type="url" id="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>" value="<?php echo esc_url($registration_url); ?>" placeholder="Set by Luma refresh" readonly>
-                                            <?php if ($registration_url) : ?>
-                                                <a class="button button-secondary" href="<?php echo esc_url($registration_url); ?>" target="_blank" rel="noopener noreferrer">Open</a>
-                                            <?php endif; ?>
-                                        </div>
+                                        <?php if ($registration_url) : ?>
+                                            <a class="barnahus-event-dashboard-card__plain-link" id="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>" href="<?php echo esc_url($registration_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($registration_url); ?></a>
+                                        <?php else : ?>
+                                            <span class="description" id="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>">Set by Luma refresh</span>
+                                        <?php endif; ?>
                                     </div>
 
                                     <div class="barnahus-event-dashboard-card__field">
@@ -934,48 +1300,17 @@ function barnahus_render_events_dashboard_page() {
                                 <?php endif; ?>
                             </div>
                         </div>
+                        </div>
                     </section>
                 <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
 
-            <?php if ($archived_events) : ?>
-                <details class="barnahus-event-dashboard-archive">
-                    <summary>Archived and past events (<?php echo esc_html(count($archived_events)); ?>)</summary>
-                    <p class="description">Events are removed from the public cards three days after their event date or end time. You can also archive an event manually with the Archived checkbox.</p>
-                    <div class="barnahus-event-dashboard-archive__list">
-                        <?php foreach ($archived_events as $archived_event) : ?>
-                            <?php
-                            $archived_post_id = $archived_event->ID;
-                            $archived_date = get_post_meta($archived_post_id, '_barnahus_event_date', true);
-                            $archived_start_time = get_post_meta($archived_post_id, '_barnahus_event_start_time', true);
-                            $archived_end_time = get_post_meta($archived_post_id, '_barnahus_event_end_time', true);
-                            $archived_location = barnahus_get_event_location($archived_post_id);
-                            $archived_is_manual = get_post_meta($archived_post_id, '_barnahus_event_archived', true) === '1';
-                            $archived_is_wordpress_post = BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($archived_post_id);
-                            ?>
-                            <div class="barnahus-event-dashboard-archive__item">
-                                <p>
-                                    <strong><?php echo esc_html(get_the_title($archived_event)); ?></strong>
-                                    <br>
-                                    <span class="description">
-                                        <?php echo esc_html(barnahus_format_event_dashboard_meta($archived_date, $archived_start_time, $archived_end_time, $archived_location)); ?>
-                                        · <?php echo esc_html($archived_is_manual ? 'Manually archived' : 'Past event'); ?>
-                                    </span>
-                                </p>
-                                <div class="barnahus-event-dashboard-archive__actions">
-                                    <a class="button button-secondary" href="<?php echo esc_url(get_edit_post_link($archived_post_id)); ?>"><?php echo $archived_is_wordpress_post ? 'Edit WordPress post' : 'Edit event record'; ?></a>
-                                    <?php if ($archived_is_manual) : ?>
-                                        <a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=barnahus_unarchive_event&event_id=' . absint($archived_post_id)), 'barnahus_unarchive_event_' . absint($archived_post_id), 'barnahus_unarchive_event_nonce')); ?>">Move to active</a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </details>
-            <?php endif; ?>
-
-            <?php submit_button('Save event display settings', 'primary', 'submit', false); ?>
-            <span class="description" style="margin-left: 8px;">Shortcut: Ctrl+Enter or Cmd+Enter</span>
+            <div class="barnahus-event-dashboard-savebar">
+                <span class="description">Shortcut: Ctrl+Enter or Cmd+Enter</span>
+                <?php submit_button('Save event display settings', 'primary', 'submit', false); ?>
+            </div>
         </form>
     </div>
     <script>
@@ -985,6 +1320,92 @@ function barnahus_render_events_dashboard_page() {
             if (!form) {
                 return;
             }
+
+            var currentFilter = 'active';
+            var searchInput = document.querySelector('[data-event-search]');
+            var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-event-filter]'));
+            var listItems = Array.prototype.slice.call(document.querySelectorAll('[data-event-list-item]'));
+            var panels = Array.prototype.slice.call(document.querySelectorAll('[data-event-panel]'));
+
+            function itemMatchesFilter(item) {
+                var filters = (item.getAttribute('data-event-filters') || '').split(' ');
+                var search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+                var searchText = item.getAttribute('data-event-search-text') || '';
+
+                return filters.indexOf(currentFilter) !== -1 && (!search || searchText.indexOf(search) !== -1);
+            }
+
+            function showEvent(eventId) {
+                listItems.forEach(function (item) {
+                    item.classList.toggle('is-active', item.getAttribute('data-event-id') === eventId);
+                });
+
+                panels.forEach(function (panel) {
+                    panel.classList.toggle('is-active', panel.getAttribute('data-event-id') === eventId);
+                });
+            }
+
+            function refreshVisibleEvents(preferredEventId) {
+                var firstVisible = null;
+
+                listItems.forEach(function (item) {
+                    var isVisible = itemMatchesFilter(item);
+                    item.hidden = !isVisible;
+
+                    if (isVisible && !firstVisible) {
+                        firstVisible = item.getAttribute('data-event-id');
+                    }
+                });
+
+                panels.forEach(function (panel) {
+                    panel.hidden = (panel.getAttribute('data-event-filters') || '').split(' ').indexOf(currentFilter) === -1;
+                });
+
+                if (preferredEventId) {
+                    var preferredItem = listItems.filter(function (item) {
+                        return item.getAttribute('data-event-id') === preferredEventId && !item.hidden;
+                    })[0];
+
+                    if (preferredItem) {
+                        showEvent(preferredEventId);
+                        return;
+                    }
+                }
+
+                if (firstVisible) {
+                    showEvent(firstVisible);
+                    return;
+                }
+
+                panels.forEach(function (panel) {
+                    panel.classList.remove('is-active');
+                });
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    currentFilter = tab.getAttribute('data-event-filter') || 'active';
+                    tabs.forEach(function (otherTab) {
+                        otherTab.classList.toggle('is-active', otherTab === tab);
+                    });
+                    refreshVisibleEvents();
+                });
+            });
+
+            listItems.forEach(function (item) {
+                item.addEventListener('click', function () {
+                    showEvent(item.getAttribute('data-event-id'));
+                });
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    var activeItem = document.querySelector('[data-event-list-item].is-active');
+                    refreshVisibleEvents(activeItem ? activeItem.getAttribute('data-event-id') : '');
+                });
+            }
+
+            refreshVisibleEvents();
 
             document.addEventListener('keydown', function (event) {
                 if (!(event.metaKey || event.ctrlKey) || event.key !== 'Enter') {
