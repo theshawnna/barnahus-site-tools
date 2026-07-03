@@ -816,7 +816,8 @@ function barnahus_render_events_dashboard_page() {
                 <?php endforeach; ?>
             </div>
 
-            <?php submit_button('Save event display settings'); ?>
+            <?php submit_button('Save event display settings', 'primary', 'submit', false); ?>
+            <span class="description" style="margin-left: 8px;">Shortcut: Ctrl+Enter or Cmd+Enter</span>
         </form>
     </div>
     <script>
@@ -828,7 +829,7 @@ function barnahus_render_events_dashboard_page() {
             }
 
             document.addEventListener('keydown', function (event) {
-                if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 's') {
+                if (!(event.metaKey || event.ctrlKey) || event.key !== 'Enter') {
                     return;
                 }
 
@@ -2007,7 +2008,7 @@ function barnahus_render_event_card($event, $args = array()) {
         ? get_the_excerpt($event)
         : wp_trim_words(wp_strip_all_tags($event->post_content), $args['description_words']);
 
-    $description_words = $featured ? max($args['description_words'], 52) : $args['description_words'];
+    $description_words = $featured ? max($args['description_words'], 36) : $args['description_words'];
     $description = wp_trim_words(wp_strip_all_tags($description), $description_words);
 
     ob_start();
@@ -2222,14 +2223,14 @@ function barnahus_enqueue_events_assets() {
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'css/events.css',
         array(),
-        '1.0.1'
+        '1.0.2'
     );
 
     wp_enqueue_script(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
         array(),
-        '1.0.1',
+        '1.0.2',
         true
     );
 }

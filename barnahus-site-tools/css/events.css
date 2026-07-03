@@ -155,7 +155,7 @@
 }
 
 .bh-event-card.is-featured .bh-event-description {
-    -webkit-line-clamp: 8;
+    -webkit-line-clamp: 5;
 }
 
 .bh-event-link {
