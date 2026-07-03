@@ -784,7 +784,7 @@ function barnahus_render_events_dashboard_page() {
                     $date = get_post_meta($post_id, '_barnahus_event_date', true);
                     $start_time = get_post_meta($post_id, '_barnahus_event_start_time', true);
                     $end_time = get_post_meta($post_id, '_barnahus_event_end_time', true);
-                    $location = get_post_meta($post_id, '_barnahus_event_location', true);
+                    $location = barnahus_get_event_location($post_id);
                     $registration_url = get_post_meta($post_id, '_barnahus_event_luma_url', true);
                     $custom_url = get_post_meta($post_id, '_barnahus_event_custom_url', true);
                     $card_link_type = barnahus_normalize_card_link_type(get_post_meta($post_id, '_barnahus_event_card_link_type', true));
@@ -927,7 +927,7 @@ function barnahus_render_events_dashboard_page() {
                             $archived_date = get_post_meta($archived_post_id, '_barnahus_event_date', true);
                             $archived_start_time = get_post_meta($archived_post_id, '_barnahus_event_start_time', true);
                             $archived_end_time = get_post_meta($archived_post_id, '_barnahus_event_end_time', true);
-                            $archived_location = get_post_meta($archived_post_id, '_barnahus_event_location', true);
+                            $archived_location = barnahus_get_event_location($archived_post_id);
                             $archived_is_manual = get_post_meta($archived_post_id, '_barnahus_event_archived', true) === '1';
                             $archived_is_wordpress_post = BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($archived_post_id);
                             ?>
@@ -1373,6 +1373,10 @@ function barnahus_normalize_event_location($location) {
     return $location;
 }
 
+function barnahus_get_event_location($post_id) {
+    return barnahus_normalize_event_location(get_post_meta($post_id, '_barnahus_event_location', true));
+}
+
 function barnahus_import_luma_calendar_events($events) {
     $result = array(
         'created' => 0,
@@ -1771,7 +1775,7 @@ function barnahus_render_event_details_meta_box($post) {
     $event_date = get_post_meta($post->ID, '_barnahus_event_date', true);
     $start_time = get_post_meta($post->ID, '_barnahus_event_start_time', true);
     $end_time = get_post_meta($post->ID, '_barnahus_event_end_time', true);
-    $location = get_post_meta($post->ID, '_barnahus_event_location', true);
+    $location = barnahus_get_event_location($post->ID);
     $luma_url = get_post_meta($post->ID, '_barnahus_event_luma_url', true);
     $luma_embed_url = get_post_meta($post->ID, '_barnahus_event_luma_embed_url', true);
     $custom_url = get_post_meta($post->ID, '_barnahus_event_custom_url', true);
@@ -2282,7 +2286,7 @@ function barnahus_render_event_card($event, $args = array()) {
     $date = get_post_meta($event->ID, '_barnahus_event_date', true);
     $start_time = get_post_meta($event->ID, '_barnahus_event_start_time', true);
     $end_time = get_post_meta($event->ID, '_barnahus_event_end_time', true);
-    $location = get_post_meta($event->ID, '_barnahus_event_location', true);
+    $location = barnahus_get_event_location($event->ID);
     $featured = get_post_meta($event->ID, '_barnahus_event_featured', true) === '1';
     $pinned = barnahus_is_event_pinned($event->ID);
     $hide_date = get_post_meta($event->ID, '_barnahus_event_hide_date', true) === '1';
@@ -2423,7 +2427,7 @@ function barnahus_render_event_single_content($content) {
 
     $post_id = get_the_ID();
     $date = get_post_meta($post_id, '_barnahus_event_date', true);
-    $location = get_post_meta($post_id, '_barnahus_event_location', true);
+    $location = barnahus_get_event_location($post_id);
     $luma_url = get_post_meta($post_id, '_barnahus_event_luma_url', true);
     $registration_embed_url = barnahus_get_event_registration_embed_url($post_id);
     $meta = barnahus_format_event_meta($date, '', '', $location);
@@ -2664,7 +2668,7 @@ function barnahus_event_admin_column_content($column, $post_id) {
             get_post_meta($post_id, '_barnahus_event_date', true),
             get_post_meta($post_id, '_barnahus_event_start_time', true),
             get_post_meta($post_id, '_barnahus_event_end_time', true),
-            get_post_meta($post_id, '_barnahus_event_location', true)
+            barnahus_get_event_location($post_id)
         ));
     }
 
