@@ -2,8 +2,9 @@
     --bh-event-card-min-width: 360px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--bh-event-card-min-width)), 1fr));
-    gap: 18px;
+    grid-auto-rows: 8px;
     grid-auto-flow: dense;
+    gap: 18px;
     width: 100%;
     align-items: start;
 }

@@ -1798,6 +1798,14 @@ function barnahus_enqueue_events_assets() {
         array(),
         '1.0.0'
     );
+
+    wp_enqueue_script(
+        'barnahus-events',
+        plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
+        array(),
+        '1.0.0',
+        true
+    );
 }
 
 function barnahus_normalize_event_columns($columns) {
