@@ -2249,6 +2249,10 @@ function barnahus_get_events_for_display($event_time = 'upcoming', $featured_mod
     $meta_query = array(
         'relation' => 'AND',
         array(
+            'key' => '_barnahus_event_date',
+            'compare' => 'EXISTS',
+        ),
+        array(
             'relation' => 'OR',
             array(
                 'key' => '_barnahus_event_hidden',
