@@ -752,6 +752,11 @@ function barnahus_render_events_dashboard_page() {
                         </div>
 
                         <div class="barnahus-event-dashboard-card__fields">
+                            <div class="barnahus-event-dashboard-card__field barnahus-event-dashboard-card__full">
+                                <label for="barnahus_event_title_<?php echo esc_attr($post_id); ?>">Event title</label>
+                                <input type="text" id="barnahus_event_title_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][title]" value="<?php echo esc_attr(get_the_title($event)); ?>">
+                            </div>
+
                             <div class="barnahus-event-dashboard-card__field barnahus-event-dashboard-card__toggles">
                                 <label>
                                     <input type="checkbox" name="events[<?php echo esc_attr($post_id); ?>][featured]" value="1" <?php checked($featured); ?>>
@@ -921,13 +926,18 @@ function barnahus_save_events_dashboard() {
         $series_names = isset($event_fields['series']) ? barnahus_parse_event_series_names($event_fields['series']) : array();
         barnahus_set_event_series_names($post_id, $series_names);
 
+        $post_update = array('ID' => $post_id);
+
+        if (isset($event_fields['title'])) {
+            $post_update['post_title'] = sanitize_text_field($event_fields['title']);
+        }
+
         if (isset($event_fields['excerpt'])) {
-            wp_update_post(
-                array(
-                    'ID' => $post_id,
-                    'post_excerpt' => sanitize_textarea_field($event_fields['excerpt']),
-                )
-            );
+            $post_update['post_excerpt'] = sanitize_textarea_field($event_fields['excerpt']);
+        }
+
+        if (count($post_update) > 1) {
+            wp_update_post($post_update);
         }
     }
 
