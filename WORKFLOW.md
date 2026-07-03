@@ -39,13 +39,19 @@ If you want to deploy by FTP instead of uploading the zip manually:
 
 1. Copy `.env.example` to `.env`.
 2. Fill in your FTP host, username, password, and remote plugin path.
-3. Run:
+3. Run a harmless FTP write test:
+
+   ```sh
+   ./scripts/test-ftp.sh
+   ```
+
+4. Deploy the plugin:
 
    ```sh
    ./scripts/deploy-ftp.sh
    ```
 
-The FTP deploy uploads the local `barnahus-site-tools/` plugin folder into the remote WordPress plugin directory. It does not upload the outer Git checkout, `dist/`, or your `.env` file.
+The FTP test uploads a temporary `codex-deploy-test.txt` file, confirms it exists, and removes it. The FTP deploy uploads the local `barnahus-site-tools/` plugin folder into the remote WordPress plugin directory. It does not upload the outer Git checkout, `dist/`, or your `.env` file.
 
 Prefer `ftps` in `.env` if your host supports it. Plain `ftp` sends credentials without encryption.
 
