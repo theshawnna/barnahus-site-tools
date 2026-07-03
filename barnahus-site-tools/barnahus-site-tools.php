@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Barnahus Site Tools
  * Description: Custom functionality for barnahus.eu.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Barnahus Europe
  */
 
@@ -17,6 +17,6 @@ add_action('wp_enqueue_scripts', function () {
         'barnahus-featured-post',
         plugin_dir_url(__FILE__) . 'css/featured-post.css',
         array(),
-        '1.0.0'
+        '1.1.0'
     );
 });
