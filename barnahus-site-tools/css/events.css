@@ -1,12 +1,12 @@
 .bh-events-grid {
     --bh-event-card-min-width: 360px;
+    --bh-event-card-row-height: 260px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--bh-event-card-min-width)), 1fr));
-    grid-auto-rows: 8px;
-    grid-auto-flow: dense;
+    grid-auto-rows: var(--bh-event-card-row-height);
     gap: 18px;
     width: 100%;
-    align-items: start;
+    align-items: stretch;
 }
 
 .bh-events-grid--columns-1 {
@@ -29,7 +29,10 @@
     display: grid;
     grid-template-columns: 50px minmax(0, 1fr);
     gap: 14px;
-    align-items: start;
+    align-items: stretch;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
     background: rgba(255, 255, 255, 0.64);
     border: 1px solid rgba(34, 22, 32, 0.12);
     border-radius: 0;
@@ -41,10 +44,9 @@
 }
 
 .bh-event-card.is-featured {
-    align-items: stretch;
+    grid-row: span 2;
     background: rgba(255, 255, 255, 0.64);
     border-color: #b9c3ed;
-    min-height: 420px;
 }
 
 .bh-event-card--quiet {
@@ -74,10 +76,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-}
-
-.bh-event-card.is-featured .bh-event-content {
-    min-height: 384px;
+    min-height: 0;
 }
 
 .bh-event-date {
@@ -170,7 +169,7 @@
 .bh-event-link {
     display: inline-block;
     width: fit-content;
-    margin-top: 12px;
+    margin-top: auto;
     color: #6f3b30;
     font-weight: 800;
     text-decoration: none;
@@ -180,10 +179,6 @@
 .bh-event-link:hover {
     opacity: .78;
     text-decoration: none;
-}
-
-.bh-event-card.is-featured .bh-event-link {
-    margin-top: auto;
 }
 
 .bh-event-card.is-compact {
@@ -262,6 +257,7 @@
     .bh-events-grid--columns-2,
     .bh-events-grid--columns-3,
     .bh-events-grid--columns-4 {
+        --bh-event-card-row-height: 250px;
         grid-template-columns: 1fr;
     }
 
@@ -273,14 +269,6 @@
 
     .bh-event-card.has-no-date {
         grid-template-columns: 1fr;
-    }
-
-    .bh-event-card.is-featured {
-        min-height: 360px;
-    }
-
-    .bh-event-card.is-featured .bh-event-content {
-        min-height: 326px;
     }
 
     .bh-event-date {

@@ -1,17 +1,7 @@
 (function () {
     function layoutEventGrid(grid) {
-        var rowHeight = parseFloat(window.getComputedStyle(grid).getPropertyValue('grid-auto-rows'));
-        var rowGap = parseFloat(window.getComputedStyle(grid).getPropertyValue('row-gap'));
-
-        if (!rowHeight) {
-            return;
-        }
-
         Array.prototype.forEach.call(grid.querySelectorAll('.bh-event-card'), function (card) {
-            card.style.gridRowEnd = '';
-            var height = card.getBoundingClientRect().height;
-            var span = Math.ceil((height + rowGap) / (rowHeight + rowGap));
-            card.style.gridRowEnd = 'span ' + span;
+            card.style.gridRowEnd = card.classList.contains('is-featured') ? 'span 2' : 'span 1';
         });
     }
 

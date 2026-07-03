@@ -2322,14 +2322,14 @@ function barnahus_enqueue_events_assets() {
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'css/events.css',
         array(),
-        '1.0.3'
+        '1.0.4'
     );
 
     wp_enqueue_script(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
         array(),
-        '1.0.3',
+        '1.0.4',
         true
     );
 }
