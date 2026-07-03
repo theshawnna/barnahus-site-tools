@@ -719,7 +719,8 @@ function barnahus_render_events_dashboard_page() {
                     $registration_url = get_post_meta($post_id, '_barnahus_event_luma_url', true);
                     $custom_url = get_post_meta($post_id, '_barnahus_event_custom_url', true);
                     $card_link_type = barnahus_normalize_card_link_type(get_post_meta($post_id, '_barnahus_event_card_link_type', true));
-                    $linked_post_id = barnahus_get_event_linked_post_id($post_id);
+                    $is_wordpress_post = BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id);
+                    $linked_post_id = $is_wordpress_post ? 0 : barnahus_get_event_linked_post_id($post_id);
                     $featured = get_post_meta($post_id, '_barnahus_event_featured', true) === '1';
                     $pinned = barnahus_is_event_pinned($post_id);
                     $hidden = get_post_meta($post_id, '_barnahus_event_hidden', true) === '1';
@@ -738,13 +739,13 @@ function barnahus_render_events_dashboard_page() {
                                 </div>
                             </div>
                             <div class="barnahus-event-dashboard-card__actions">
-                                <a class="button button-secondary" href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php echo BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id) ? 'Edit WordPress post' : 'Edit event record'; ?></a>
+                                <a class="button button-secondary" href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php echo $is_wordpress_post ? 'Edit WordPress post' : 'Edit event record'; ?></a>
                                 <?php if ($linked_post_id) : ?>
                                     <a class="button button-secondary" href="<?php echo esc_url(get_edit_post_link($linked_post_id)); ?>">Edit linked post</a>
                                     <?php if ('publish' === get_post_status($linked_post_id)) : ?>
                                         <a class="button button-secondary" href="<?php echo esc_url(get_permalink($linked_post_id)); ?>">View post</a>
                                     <?php endif; ?>
-                                <?php elseif (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id) && 'publish' === $event->post_status) : ?>
+                                <?php elseif ($is_wordpress_post && 'publish' === $event->post_status) : ?>
                                     <a class="button button-secondary" href="<?php echo esc_url(get_permalink($event)); ?>">View post</a>
                                 <?php endif; ?>
                             </div>
@@ -768,6 +769,16 @@ function barnahus_render_events_dashboard_page() {
                                     <input type="checkbox" name="events[<?php echo esc_attr($post_id); ?>][hide_date]" value="1" <?php checked($hide_date); ?>>
                                     Hide date on card
                                 </label>
+                            </div>
+
+                            <div class="barnahus-event-dashboard-card__field">
+                                <label for="barnahus_event_date_<?php echo esc_attr($post_id); ?>">Date</label>
+                                <input type="text" id="barnahus_event_date_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][date]" value="<?php echo esc_attr($date); ?>" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" inputmode="numeric" title="Use ISO format: YYYY-MM-DD">
+                            </div>
+
+                            <div class="barnahus-event-dashboard-card__field">
+                                <label for="barnahus_event_location_<?php echo esc_attr($post_id); ?>">Location / platform</label>
+                                <input type="text" id="barnahus_event_location_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][location]" value="<?php echo esc_attr($location); ?>" placeholder="Online, city, or venue">
                             </div>
 
                             <div class="barnahus-event-dashboard-card__field">
@@ -885,6 +896,8 @@ function barnahus_save_events_dashboard() {
         update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_hidden', isset($event_fields['hidden']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_hide_date', isset($event_fields['hide_date']) ? '1' : '0');
+        update_post_meta($post_id, '_barnahus_event_date', isset($event_fields['date']) ? barnahus_normalize_event_date($event_fields['date']) : '');
+        update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? sanitize_text_field($event_fields['location']) : '');
         update_post_meta($post_id, '_barnahus_event_custom_url', isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '');
         update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'registration');
         update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : '');
