@@ -1028,7 +1028,7 @@ function barnahus_save_events_dashboard() {
         update_post_meta($post_id, '_barnahus_event_hidden', isset($event_fields['hidden']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_hide_date', isset($event_fields['hide_date']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_date', isset($event_fields['date']) ? barnahus_normalize_event_date($event_fields['date']) : '');
-        update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? sanitize_text_field($event_fields['location']) : '');
+        update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? barnahus_normalize_event_location($event_fields['location']) : '');
         $card_link_type = barnahus_resolve_submitted_event_card_link_type($event_fields, $post_id, 'registration');
         update_post_meta($post_id, '_barnahus_event_custom_url', isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '');
         update_post_meta($post_id, '_barnahus_event_card_link_type', $card_link_type);
@@ -1093,7 +1093,7 @@ function barnahus_create_event_from_dashboard() {
     update_post_meta($post_id, '_barnahus_event_date', isset($event_fields['date']) ? barnahus_normalize_event_date($event_fields['date']) : '');
     update_post_meta($post_id, '_barnahus_event_start_time', '');
     update_post_meta($post_id, '_barnahus_event_end_time', '');
-    update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? sanitize_text_field($event_fields['location']) : '');
+    update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? barnahus_normalize_event_location($event_fields['location']) : '');
     update_post_meta($post_id, '_barnahus_event_luma_url', isset($event_fields['registration_url']) ? esc_url_raw($event_fields['registration_url']) : '');
     update_post_meta($post_id, '_barnahus_event_luma_embed_url', '');
     $card_link_type = barnahus_resolve_submitted_event_card_link_type($event_fields, $post_id, 'custom');
@@ -1348,11 +1348,11 @@ function barnahus_parse_luma_datetime($datetime) {
 
 function barnahus_normalize_luma_location($location, $attendance_mode = '') {
     if (is_array($location) && !empty($location['name'])) {
-        return sanitize_text_field($location['name']);
+        return barnahus_normalize_event_location($location['name']);
     }
 
     if (is_string($location) && $location) {
-        return sanitize_text_field($location);
+        return barnahus_normalize_event_location($location);
     }
 
     if (false !== strpos($attendance_mode, 'OnlineEventAttendanceMode')) {
@@ -1360,6 +1360,17 @@ function barnahus_normalize_luma_location($location, $attendance_mode = '') {
     }
 
     return '';
+}
+
+function barnahus_normalize_event_location($location) {
+    $location = sanitize_text_field($location);
+    $normalized_location = strtolower(trim($location));
+
+    if (in_array($normalized_location, array('to be announced', 'tba', 'to be determined', 'tbd'), true)) {
+        return '';
+    }
+
+    return $location;
 }
 
 function barnahus_import_luma_calendar_events($events) {
@@ -1936,7 +1947,7 @@ function barnahus_save_event_details($post_id) {
         '_barnahus_event_date' => array('barnahus_event_date', 'barnahus_normalize_event_date'),
         '_barnahus_event_start_time' => array('barnahus_event_start_time', 'sanitize_text_field'),
         '_barnahus_event_end_time' => array('barnahus_event_end_time', 'sanitize_text_field'),
-        '_barnahus_event_location' => array('barnahus_event_location', 'sanitize_text_field'),
+        '_barnahus_event_location' => array('barnahus_event_location', 'barnahus_normalize_event_location'),
         '_barnahus_event_luma_url' => array('barnahus_event_luma_url', 'esc_url_raw'),
         '_barnahus_event_luma_embed_url' => array('barnahus_event_luma_embed_url', 'esc_url_raw'),
         '_barnahus_event_custom_url' => array('barnahus_event_custom_url', 'esc_url_raw'),
@@ -2446,6 +2457,7 @@ function barnahus_render_event_single_content($content) {
 
 function barnahus_format_event_meta($date, $start_time, $end_time, $location) {
     $parts = array();
+    $location = barnahus_normalize_event_location($location);
     $timestamp = $date ? strtotime($date . ' ' . ($start_time ? $start_time : '00:00')) : false;
 
     if ($timestamp) {
@@ -2467,6 +2479,7 @@ function barnahus_format_event_meta($date, $start_time, $end_time, $location) {
 
 function barnahus_format_event_dashboard_meta($date, $start_time, $end_time, $location) {
     $parts = array();
+    $location = barnahus_normalize_event_location($location);
 
     if ($date) {
         $timestamp = strtotime($date);
