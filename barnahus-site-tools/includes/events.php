@@ -474,6 +474,14 @@ function barnahus_render_events_dashboard_page() {
                 margin-bottom: 14px;
             }
 
+            .barnahus-event-dashboard-card__actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
             .barnahus-event-dashboard-card__title {
                 margin: 0;
                 font-size: 16px;
@@ -687,7 +695,7 @@ function barnahus_render_events_dashboard_page() {
             <?php submit_button('Create event card', 'secondary', 'submit', false); ?>
         </form>
 
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <form id="barnahus-event-dashboard-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="barnahus_save_events_dashboard">
             <?php wp_nonce_field('barnahus_save_events_dashboard', 'barnahus_events_dashboard_nonce'); ?>
 
@@ -723,15 +731,15 @@ function barnahus_render_events_dashboard_page() {
                                     <?php echo esc_html(' · ' . barnahus_get_event_dashboard_state($post_id, $event->post_status)); ?>
                                 </div>
                             </div>
-                            <div>
-                                <a href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php echo BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id) ? 'Edit post' : 'Edit record'; ?></a>
+                            <div class="barnahus-event-dashboard-card__actions">
+                                <a class="button button-secondary" href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php echo BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id) ? 'Edit WordPress post' : 'Edit event record'; ?></a>
                                 <?php if ($linked_post_id) : ?>
-                                    <span> | </span><a href="<?php echo esc_url(get_edit_post_link($linked_post_id)); ?>">Edit linked post</a>
+                                    <a class="button button-secondary" href="<?php echo esc_url(get_edit_post_link($linked_post_id)); ?>">Edit linked post</a>
                                     <?php if ('publish' === get_post_status($linked_post_id)) : ?>
-                                        <span> | </span><a href="<?php echo esc_url(get_permalink($linked_post_id)); ?>">View post</a>
+                                        <a class="button button-secondary" href="<?php echo esc_url(get_permalink($linked_post_id)); ?>">View post</a>
                                     <?php endif; ?>
                                 <?php elseif (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id) && 'publish' === $event->post_status) : ?>
-                                    <span> | </span><a href="<?php echo esc_url(get_permalink($event)); ?>">View</a>
+                                    <a class="button button-secondary" href="<?php echo esc_url(get_permalink($event)); ?>">View post</a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -811,6 +819,30 @@ function barnahus_render_events_dashboard_page() {
             <?php submit_button('Save event display settings'); ?>
         </form>
     </div>
+    <script>
+        (function () {
+            var form = document.getElementById('barnahus-event-dashboard-form');
+
+            if (!form) {
+                return;
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 's') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                    return;
+                }
+
+                form.submit();
+            });
+        }());
+    </script>
     <?php
 }
 
@@ -1975,7 +2007,8 @@ function barnahus_render_event_card($event, $args = array()) {
         ? get_the_excerpt($event)
         : wp_trim_words(wp_strip_all_tags($event->post_content), $args['description_words']);
 
-    $description = wp_trim_words(wp_strip_all_tags($description), $args['description_words']);
+    $description_words = $featured ? max($args['description_words'], 52) : $args['description_words'];
+    $description = wp_trim_words(wp_strip_all_tags($description), $description_words);
 
     ob_start();
     ?>
@@ -2189,14 +2222,14 @@ function barnahus_enqueue_events_assets() {
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'css/events.css',
         array(),
-        '1.0.0'
+        '1.0.1'
     );
 
     wp_enqueue_script(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
         array(),
-        '1.0.0',
+        '1.0.1',
         true
     );
 }

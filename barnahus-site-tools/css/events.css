@@ -154,6 +154,10 @@
     -webkit-line-clamp: 3;
 }
 
+.bh-event-card.is-featured .bh-event-description {
+    -webkit-line-clamp: 8;
+}
+
 .bh-event-link {
     display: inline-block;
     width: fit-content;
