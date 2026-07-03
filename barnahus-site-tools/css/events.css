@@ -41,6 +41,7 @@
 }
 
 .bh-event-card.is-featured {
+    align-items: stretch;
     background: rgba(255, 255, 255, 0.64);
     border-color: #b9c3ed;
     min-height: 420px;
@@ -73,6 +74,10 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+}
+
+.bh-event-card.is-featured .bh-event-content {
+    min-height: 384px;
 }
 
 .bh-event-date {
@@ -159,7 +164,7 @@
 }
 
 .bh-event-card.is-featured .bh-event-description {
-    -webkit-line-clamp: 5;
+    -webkit-line-clamp: 12;
 }
 
 .bh-event-link {
@@ -175,6 +180,10 @@
 .bh-event-link:hover {
     opacity: .78;
     text-decoration: none;
+}
+
+.bh-event-card.is-featured .bh-event-link {
+    margin-top: auto;
 }
 
 .bh-event-card.is-compact {
@@ -268,6 +277,10 @@
 
     .bh-event-card.is-featured {
         min-height: 360px;
+    }
+
+    .bh-event-card.is-featured .bh-event-content {
+        min-height: 326px;
     }
 
     .bh-event-date {

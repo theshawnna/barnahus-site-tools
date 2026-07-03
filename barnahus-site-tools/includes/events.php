@@ -2092,7 +2092,7 @@ function barnahus_render_event_card($event, $args = array()) {
         ? get_the_excerpt($event)
         : wp_trim_words(wp_strip_all_tags($event->post_content), $args['description_words']);
 
-    $description_words = $featured ? max($args['description_words'], 36) : $args['description_words'];
+    $description_words = $featured ? max($args['description_words'], 95) : $args['description_words'];
     $description = wp_trim_words(wp_strip_all_tags($description), $description_words);
 
     ob_start();
