@@ -22,6 +22,7 @@ add_action('admin_post_barnahus_refresh_luma_events', 'barnahus_refresh_luma_eve
 add_action('admin_post_barnahus_convert_event_pages_to_posts', 'barnahus_convert_event_pages_to_posts_from_dashboard');
 add_action('admin_post_barnahus_restore_event_snapshot', 'barnahus_restore_event_snapshot_from_dashboard');
 add_action('admin_post_barnahus_create_event_post_page', 'barnahus_create_event_post_page_from_dashboard');
+add_action('admin_post_barnahus_unarchive_event', 'barnahus_unarchive_event_from_dashboard');
 add_action('add_meta_boxes', 'barnahus_add_event_details_meta_box');
 add_action('add_meta_boxes', 'barnahus_add_event_usage_meta_box');
 add_action('save_post_' . BARNAHUS_EVENT_POST_TYPE, 'barnahus_save_event_details');
@@ -170,6 +171,7 @@ function barnahus_get_event_snapshot_meta($post_id) {
         '_barnahus_event_registration_status',
         '_barnahus_event_featured',
         '_barnahus_event_pinned',
+        '_barnahus_event_archived',
         '_barnahus_event_hidden',
         '_barnahus_event_hide_date',
         '_barnahus_event_linked_post_id',
@@ -329,6 +331,12 @@ function barnahus_render_events_dashboard_page() {
     $legacy_events = barnahus_get_legacy_event_posts();
     $last_luma_refresh = get_option('barnahus_event_luma_last_refresh');
     $snapshots = barnahus_get_event_dashboard_snapshots();
+    $active_events = array_values(array_filter($events, function ($event) {
+        return !barnahus_event_is_archived($event->ID);
+    }));
+    $archived_events = array_values(array_filter($events, function ($event) {
+        return barnahus_event_is_archived($event->ID);
+    }));
 
     ?>
     <div class="wrap">
@@ -356,6 +364,12 @@ function barnahus_render_events_dashboard_page() {
         <?php if (isset($_GET['barnahus_event_restored'])) : ?>
             <div class="notice notice-success is-dismissible">
                 <p>Event dashboard history restored for <?php echo esc_html(absint($_GET['restored'])); ?> event(s).</p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['barnahus_event_unarchived'])) : ?>
+            <div class="notice notice-success is-dismissible">
+                <p>Event moved back to the active dashboard list.</p>
             </div>
         <?php endif; ?>
 
@@ -447,9 +461,49 @@ function barnahus_render_events_dashboard_page() {
                 padding: 12px 16px;
             }
 
+            .barnahus-event-dashboard-archive {
+                margin-top: 18px;
+                background: #f6f7f7;
+                border: 1px solid #c3c4c7;
+                padding: 12px;
+            }
+
             .barnahus-event-dashboard-history summary {
                 cursor: pointer;
                 font-weight: 600;
+            }
+
+            .barnahus-event-dashboard-archive summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+
+            .barnahus-event-dashboard-archive__list {
+                display: grid;
+                gap: 8px;
+                margin-top: 12px;
+            }
+
+            .barnahus-event-dashboard-archive__item {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px 16px;
+                align-items: center;
+                justify-content: space-between;
+                background: #fff;
+                border: 1px solid #dcdcde;
+                padding: 10px 12px;
+            }
+
+            .barnahus-event-dashboard-archive__item p {
+                margin: 0;
+            }
+
+            .barnahus-event-dashboard-archive__actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
             }
 
             .barnahus-event-dashboard-history__list {
@@ -720,11 +774,11 @@ function barnahus_render_events_dashboard_page() {
             <?php wp_nonce_field('barnahus_save_events_dashboard', 'barnahus_events_dashboard_nonce'); ?>
 
             <div class="barnahus-event-dashboard">
-                <?php if (!$events) : ?>
-                    <div class="barnahus-event-dashboard-card">No Barnahus events found.</div>
+                <?php if (!$active_events) : ?>
+                    <div class="barnahus-event-dashboard-card">No active Barnahus events found.</div>
                 <?php endif; ?>
 
-                <?php foreach ($events as $event) : ?>
+                <?php foreach ($active_events as $event) : ?>
                     <?php
                     $post_id = $event->ID;
                     $date = get_post_meta($post_id, '_barnahus_event_date', true);
@@ -738,6 +792,7 @@ function barnahus_render_events_dashboard_page() {
                     $linked_post_id = $is_wordpress_post ? 0 : barnahus_get_event_linked_post_id($post_id);
                     $featured = get_post_meta($post_id, '_barnahus_event_featured', true) === '1';
                     $pinned = barnahus_is_event_pinned($post_id);
+                    $archived = get_post_meta($post_id, '_barnahus_event_archived', true) === '1';
                     $hidden = get_post_meta($post_id, '_barnahus_event_hidden', true) === '1';
                     $hide_date = get_post_meta($post_id, '_barnahus_event_hide_date', true) === '1';
                     $registration_status = get_post_meta($post_id, '_barnahus_event_registration_status', true);
@@ -784,6 +839,10 @@ function barnahus_render_events_dashboard_page() {
                                 <label>
                                     <input type="checkbox" name="events[<?php echo esc_attr($post_id); ?>][hidden]" value="1" <?php checked($hidden); ?>>
                                     Hidden
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="events[<?php echo esc_attr($post_id); ?>][archived]" value="1" <?php checked($archived); ?>>
+                                    Archived
                                 </label>
                                 <label>
                                     <input type="checkbox" name="events[<?php echo esc_attr($post_id); ?>][hide_date]" value="1" <?php checked($hide_date); ?>>
@@ -857,6 +916,42 @@ function barnahus_render_events_dashboard_page() {
                 <?php endforeach; ?>
             </div>
 
+            <?php if ($archived_events) : ?>
+                <details class="barnahus-event-dashboard-archive">
+                    <summary>Archived and past events (<?php echo esc_html(count($archived_events)); ?>)</summary>
+                    <p class="description">Events are removed from the public cards three days after their event date or end time. You can also archive an event manually with the Archived checkbox.</p>
+                    <div class="barnahus-event-dashboard-archive__list">
+                        <?php foreach ($archived_events as $archived_event) : ?>
+                            <?php
+                            $archived_post_id = $archived_event->ID;
+                            $archived_date = get_post_meta($archived_post_id, '_barnahus_event_date', true);
+                            $archived_start_time = get_post_meta($archived_post_id, '_barnahus_event_start_time', true);
+                            $archived_end_time = get_post_meta($archived_post_id, '_barnahus_event_end_time', true);
+                            $archived_location = get_post_meta($archived_post_id, '_barnahus_event_location', true);
+                            $archived_is_manual = get_post_meta($archived_post_id, '_barnahus_event_archived', true) === '1';
+                            $archived_is_wordpress_post = BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($archived_post_id);
+                            ?>
+                            <div class="barnahus-event-dashboard-archive__item">
+                                <p>
+                                    <strong><?php echo esc_html(get_the_title($archived_event)); ?></strong>
+                                    <br>
+                                    <span class="description">
+                                        <?php echo esc_html(barnahus_format_event_dashboard_meta($archived_date, $archived_start_time, $archived_end_time, $archived_location)); ?>
+                                        · <?php echo esc_html($archived_is_manual ? 'Manually archived' : 'Past event'); ?>
+                                    </span>
+                                </p>
+                                <div class="barnahus-event-dashboard-archive__actions">
+                                    <a class="button button-secondary" href="<?php echo esc_url(get_edit_post_link($archived_post_id)); ?>"><?php echo $archived_is_wordpress_post ? 'Edit WordPress post' : 'Edit event record'; ?></a>
+                                    <?php if ($archived_is_manual) : ?>
+                                        <a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=barnahus_unarchive_event&event_id=' . absint($archived_post_id)), 'barnahus_unarchive_event_' . absint($archived_post_id), 'barnahus_unarchive_event_nonce')); ?>">Move to active</a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+            <?php endif; ?>
+
             <?php submit_button('Save event display settings', 'primary', 'submit', false); ?>
             <span class="description" style="margin-left: 8px;">Shortcut: Ctrl+Enter or Cmd+Enter</span>
         </form>
@@ -929,6 +1024,7 @@ function barnahus_save_events_dashboard() {
 
         update_post_meta($post_id, '_barnahus_event_featured', isset($event_fields['featured']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
+        update_post_meta($post_id, '_barnahus_event_archived', isset($event_fields['archived']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_hidden', isset($event_fields['hidden']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_hide_date', isset($event_fields['hide_date']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_date', isset($event_fields['date']) ? barnahus_normalize_event_date($event_fields['date']) : '');
@@ -1006,6 +1102,7 @@ function barnahus_create_event_from_dashboard() {
     update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : 'coming-soon');
     update_post_meta($post_id, '_barnahus_event_featured', isset($event_fields['featured']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
+    update_post_meta($post_id, '_barnahus_event_archived', '0');
     update_post_meta($post_id, '_barnahus_event_hide_date', isset($event_fields['hide_date']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_hidden', '0');
 
@@ -1043,6 +1140,28 @@ function barnahus_create_event_post_page_from_dashboard() {
     }
 
     wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_post_created' => '1', 'post_id' => absint($linked_post_id))));
+    exit;
+}
+
+function barnahus_unarchive_event_from_dashboard() {
+    $event_id = isset($_REQUEST['event_id']) ? absint($_REQUEST['event_id']) : 0;
+
+    if (!$event_id || !current_user_can('edit_post', $event_id)) {
+        wp_die('You do not have permission to unarchive this event.');
+    }
+
+    if (!isset($_REQUEST['barnahus_unarchive_event_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['barnahus_unarchive_event_nonce'])), 'barnahus_unarchive_event_' . $event_id)) {
+        wp_die('The event archive form could not be verified.');
+    }
+
+    if (!barnahus_is_event_post($event_id)) {
+        wp_die('That event could not be found.');
+    }
+
+    barnahus_capture_event_dashboard_snapshot('Before event unarchive');
+    update_post_meta($event_id, '_barnahus_event_archived', '0');
+
+    wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_unarchived' => '1')));
     exit;
 }
 
@@ -1315,6 +1434,7 @@ function barnahus_update_event_from_luma($post_id, $event, $is_new = false) {
         update_post_meta($post_id, '_barnahus_event_registration_status', 'open');
         update_post_meta($post_id, '_barnahus_event_featured', '0');
         update_post_meta($post_id, '_barnahus_event_pinned', '0');
+        update_post_meta($post_id, '_barnahus_event_archived', '0');
         update_post_meta($post_id, '_barnahus_event_hide_date', '0');
         update_post_meta($post_id, '_barnahus_event_hidden', '0');
 
@@ -1483,6 +1603,10 @@ function barnahus_get_event_dashboard_state($post_id, $post_status) {
         return 'Hidden';
     }
 
+    if (barnahus_event_is_archived($post_id)) {
+        return 'Archived';
+    }
+
     if (barnahus_is_event_pinned($post_id)) {
         return 'Pinned';
     }
@@ -1640,6 +1764,7 @@ function barnahus_render_event_details_meta_box($post) {
     $registration_status = get_post_meta($post->ID, '_barnahus_event_registration_status', true);
     $featured = get_post_meta($post->ID, '_barnahus_event_featured', true);
     $pinned = barnahus_is_event_pinned($post->ID);
+    $archived = get_post_meta($post->ID, '_barnahus_event_archived', true);
     $hidden = get_post_meta($post->ID, '_barnahus_event_hidden', true);
     $hide_date = get_post_meta($post->ID, '_barnahus_event_hide_date', true);
     ?>
@@ -1750,6 +1875,13 @@ function barnahus_render_event_details_meta_box($post) {
 
         <div class="barnahus-event-field">
             <label>
+                <input type="checkbox" name="barnahus_event_archived" value="1" <?php checked($archived, '1'); ?>>
+                Archived: keep this event out of the public grid
+            </label>
+        </div>
+
+        <div class="barnahus-event-field">
+            <label>
                 <input type="checkbox" name="barnahus_event_hidden" value="1" <?php checked($hidden, '1'); ?>>
                 Hidden: do not show this event in the public grid
             </label>
@@ -1816,6 +1948,7 @@ function barnahus_save_event_details($post_id) {
     update_post_meta($post_id, '_barnahus_event_card_link_type', $submitted_card_link_type);
     update_post_meta($post_id, '_barnahus_event_featured', isset($_POST['barnahus_event_featured']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_pinned', isset($_POST['barnahus_event_pinned']) ? '1' : '0');
+    update_post_meta($post_id, '_barnahus_event_archived', isset($_POST['barnahus_event_archived']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_hidden', isset($_POST['barnahus_event_hidden']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_hide_date', isset($_POST['barnahus_event_hide_date']) ? '1' : '0');
 }
@@ -1904,7 +2037,7 @@ function barnahus_event_card_shortcode($atts) {
         return '';
     }
 
-    if (get_post_meta($event->ID, '_barnahus_event_hidden', true) === '1') {
+    if (get_post_meta($event->ID, '_barnahus_event_hidden', true) === '1' || barnahus_event_is_archived($event->ID)) {
         return '';
     }
 
@@ -1935,7 +2068,7 @@ function barnahus_get_events_for_display($event_time = 'upcoming', $featured_mod
             'relation' => 'OR',
             array(
                 'key' => '_barnahus_event_date',
-                'value' => wp_date('Y-m-d'),
+                'value' => wp_date('Y-m-d', time() - (3 * DAY_IN_SECONDS)),
                 'compare' => '>=',
                 'type' => 'DATE',
             ),
@@ -1988,6 +2121,10 @@ function barnahus_get_events_for_display($event_time = 'upcoming', $featured_mod
         $events,
         function ($event) use ($series) {
             if (!barnahus_event_post_is_dashboard_event($event)) {
+                return false;
+            }
+
+            if (barnahus_event_is_archived($event->ID)) {
                 return false;
             }
 
@@ -2080,6 +2217,39 @@ function barnahus_is_event_pinned($post_id) {
     }
 
     return get_post_meta($post_id, '_barnahus_event_featured', true) === '1';
+}
+
+function barnahus_event_is_archived($post_id) {
+    if (get_post_meta($post_id, '_barnahus_event_archived', true) === '1') {
+        return true;
+    }
+
+    return barnahus_event_is_automatically_archived($post_id);
+}
+
+function barnahus_event_is_automatically_archived($post_id) {
+    $archive_timestamp = barnahus_get_event_archive_timestamp($post_id);
+
+    return $archive_timestamp && time() >= $archive_timestamp;
+}
+
+function barnahus_get_event_archive_timestamp($post_id) {
+    $date = get_post_meta($post_id, '_barnahus_event_date', true);
+
+    if (!$date) {
+        return 0;
+    }
+
+    $end_time = get_post_meta($post_id, '_barnahus_event_end_time', true);
+    $time = $end_time ? $end_time : '23:59:59';
+
+    try {
+        $event_end = new DateTimeImmutable($date . ' ' . $time, wp_timezone());
+    } catch (Exception $exception) {
+        return 0;
+    }
+
+    return $event_end->modify('+3 days')->getTimestamp();
 }
 
 function barnahus_render_event_card($event, $args = array()) {
