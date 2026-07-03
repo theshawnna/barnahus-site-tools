@@ -424,6 +424,17 @@ function barnahus_render_events_dashboard_page() {
                 margin: 0;
             }
 
+            .barnahus-event-dashboard-tip {
+                margin: 0 0 16px;
+                border-left: 4px solid #aeb9ee;
+                background: #fff;
+                padding: 10px 12px;
+            }
+
+            .barnahus-event-dashboard-tip p {
+                margin: 0;
+            }
+
             .barnahus-event-dashboard-create {
                 margin: 16px 0;
                 border-left: 4px solid #aeb9ee;
@@ -587,6 +598,10 @@ function barnahus_render_events_dashboard_page() {
                     </form>
                 <?php endif; ?>
             </div>
+        </div>
+
+        <div class="barnahus-event-dashboard-tip">
+            <p><strong>Tip:</strong> press Ctrl+Enter or Cmd+Enter to save event display settings.</p>
         </div>
 
         <?php if ($snapshots) : ?>
