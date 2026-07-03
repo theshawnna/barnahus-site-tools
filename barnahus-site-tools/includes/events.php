@@ -635,7 +635,7 @@ function barnahus_render_events_dashboard_page() {
 
                 <div class="barnahus-event-dashboard-card__field">
                     <label for="barnahus_new_event_location">Location / platform</label>
-                    <input type="text" id="barnahus_new_event_location" name="new_event[location]" placeholder="Online, city, or TBA">
+                    <input type="text" id="barnahus_new_event_location" name="new_event[location]" placeholder="Online, city, or venue">
                 </div>
 
                 <div class="barnahus-event-dashboard-card__field">
@@ -1185,7 +1185,7 @@ function barnahus_normalize_luma_location($location, $attendance_mode = '') {
         return 'Online';
     }
 
-    return 'To be announced';
+    return '';
 }
 
 function barnahus_import_luma_calendar_events($events) {
