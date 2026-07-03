@@ -548,7 +548,7 @@ function barnahus_render_events_dashboard_page() {
             <p>
                 Luma source: <a href="<?php echo esc_url(BARNAHUS_EVENT_LUMA_CALENDAR_URL); ?>">Network Events</a>
                 <?php if ($last_luma_refresh) : ?>
-                    <br><span class="description">Last refreshed <?php echo esc_html(date_i18n('j F Y H:i', (int) $last_luma_refresh)); ?>.</span>
+                    <br><span class="description">Last refreshed <?php echo esc_html(barnahus_format_dashboard_datetime((int) $last_luma_refresh)); ?>.</span>
                 <?php endif; ?>
             </p>
             <div class="barnahus-event-dashboard-tools__actions">
@@ -579,7 +579,7 @@ function barnahus_render_events_dashboard_page() {
                                 <strong><?php echo esc_html(isset($snapshot['label']) ? $snapshot['label'] : 'Event dashboard snapshot'); ?></strong>
                                 <br>
                                 <span class="description">
-                                    <?php echo esc_html(date_i18n('j F Y H:i', isset($snapshot['created_at']) ? (int) $snapshot['created_at'] : time())); ?>
+                                    <?php echo esc_html(barnahus_format_dashboard_datetime(isset($snapshot['created_at']) ? (int) $snapshot['created_at'] : time())); ?>
                                     · <?php echo esc_html(isset($snapshot['events']) && is_array($snapshot['events']) ? count($snapshot['events']) : 0); ?> event(s)
                                 </span>
                             </p>
@@ -706,7 +706,7 @@ function barnahus_render_events_dashboard_page() {
                             <div>
                                 <h2 class="barnahus-event-dashboard-card__title"><?php echo esc_html(get_the_title($event)); ?></h2>
                                 <div class="barnahus-event-dashboard-card__meta">
-                                    <?php echo esc_html(barnahus_format_event_meta($date, $start_time, $end_time, $location)); ?>
+                                    <?php echo esc_html(barnahus_format_event_dashboard_meta($date, $start_time, $end_time, $location)); ?>
                                     <?php echo esc_html(' · ' . barnahus_get_event_dashboard_state($post_id, $event->post_status)); ?>
                                 </div>
                             </div>
@@ -2008,6 +2008,34 @@ function barnahus_format_event_meta($date, $start_time, $end_time, $location) {
     }
 
     return implode(' · ', $parts);
+}
+
+function barnahus_format_event_dashboard_meta($date, $start_time, $end_time, $location) {
+    $parts = array();
+
+    if ($date) {
+        $timestamp = strtotime($date);
+
+        if ($timestamp) {
+            $parts[] = date('Y-m-d', $timestamp);
+        }
+    }
+
+    if ($start_time && $end_time) {
+        $parts[] = $start_time . '-' . $end_time;
+    } elseif ($start_time) {
+        $parts[] = $start_time;
+    }
+
+    if ($location) {
+        $parts[] = $location;
+    }
+
+    return implode(' · ', $parts);
+}
+
+function barnahus_format_dashboard_datetime($timestamp) {
+    return wp_date('c', (int) $timestamp);
 }
 
 function barnahus_enqueue_events_assets() {
