@@ -10,6 +10,8 @@ const BARNAHUS_EVENT_CANONICAL_POST_TYPE = 'post';
 const BARNAHUS_EVENT_TAG_SLUG = 'event';
 const BARNAHUS_EVENT_LUMA_CALENDAR_URL = 'https://luma.com/Barnahus';
 const BARNAHUS_EVENT_REWRITE_VERSION = '2026-07-03-public-events';
+const BARNAHUS_EVENT_SNAPSHOTS_OPTION = 'barnahus_event_dashboard_snapshots';
+const BARNAHUS_EVENT_SNAPSHOT_LIMIT = 20;
 
 add_action('init', 'barnahus_register_event_content');
 add_action('init', 'barnahus_maybe_flush_event_rewrite_rules', 99);
@@ -18,6 +20,7 @@ add_action('admin_post_barnahus_save_events_dashboard', 'barnahus_save_events_da
 add_action('admin_post_barnahus_create_event_from_dashboard', 'barnahus_create_event_from_dashboard');
 add_action('admin_post_barnahus_refresh_luma_events', 'barnahus_refresh_luma_events_from_dashboard');
 add_action('admin_post_barnahus_convert_event_pages_to_posts', 'barnahus_convert_event_pages_to_posts_from_dashboard');
+add_action('admin_post_barnahus_restore_event_snapshot', 'barnahus_restore_event_snapshot_from_dashboard');
 add_action('add_meta_boxes', 'barnahus_add_event_details_meta_box');
 add_action('add_meta_boxes', 'barnahus_add_event_usage_meta_box');
 add_action('save_post_' . BARNAHUS_EVENT_POST_TYPE, 'barnahus_save_event_details');
@@ -111,6 +114,142 @@ function barnahus_get_events_dashboard_url($args = array()) {
     return $url;
 }
 
+function barnahus_get_event_dashboard_snapshots() {
+    $snapshots = get_option(BARNAHUS_EVENT_SNAPSHOTS_OPTION, array());
+
+    return is_array($snapshots) ? $snapshots : array();
+}
+
+function barnahus_capture_event_dashboard_snapshot($label) {
+    $events = barnahus_get_events_for_dashboard();
+
+    if (!$events) {
+        return '';
+    }
+
+    $snapshot = array(
+        'id' => function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid('event-snapshot-', true),
+        'created_at' => time(),
+        'label' => sanitize_text_field($label),
+        'events' => array(),
+    );
+
+    foreach ($events as $event) {
+        $post_id = absint($event->ID);
+
+        $snapshot['events'][$post_id] = array(
+            'post_id' => $post_id,
+            'post_type' => get_post_type($post_id),
+            'post_status' => get_post_status($post_id),
+            'title' => get_post_field('post_title', $post_id),
+            'excerpt' => get_post_field('post_excerpt', $post_id),
+            'series' => barnahus_get_event_series_names($post_id),
+            'meta' => barnahus_get_event_snapshot_meta($post_id),
+        );
+    }
+
+    $snapshots = barnahus_get_event_dashboard_snapshots();
+    array_unshift($snapshots, $snapshot);
+    $snapshots = array_slice($snapshots, 0, BARNAHUS_EVENT_SNAPSHOT_LIMIT);
+
+    update_option(BARNAHUS_EVENT_SNAPSHOTS_OPTION, $snapshots, false);
+
+    return $snapshot['id'];
+}
+
+function barnahus_get_event_snapshot_meta($post_id) {
+    $meta_keys = array(
+        '_barnahus_event_date',
+        '_barnahus_event_start_time',
+        '_barnahus_event_end_time',
+        '_barnahus_event_location',
+        '_barnahus_event_luma_url',
+        '_barnahus_event_custom_url',
+        '_barnahus_event_card_link_type',
+        '_barnahus_event_registration_status',
+        '_barnahus_event_featured',
+        '_barnahus_event_pinned',
+        '_barnahus_event_hidden',
+    );
+
+    $meta = array();
+
+    foreach ($meta_keys as $meta_key) {
+        $meta[$meta_key] = get_post_meta($post_id, $meta_key, true);
+    }
+
+    return $meta;
+}
+
+function barnahus_find_event_dashboard_snapshot($snapshot_id) {
+    $snapshot_id = sanitize_text_field($snapshot_id);
+
+    foreach (barnahus_get_event_dashboard_snapshots() as $snapshot) {
+        if (!empty($snapshot['id']) && $snapshot_id === $snapshot['id']) {
+            return $snapshot;
+        }
+    }
+
+    return array();
+}
+
+function barnahus_restore_event_snapshot_from_dashboard() {
+    if (!current_user_can('edit_posts')) {
+        wp_die('You do not have permission to restore event history.');
+    }
+
+    if (!isset($_POST['barnahus_restore_event_snapshot_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['barnahus_restore_event_snapshot_nonce'])), 'barnahus_restore_event_snapshot')) {
+        wp_die('The event history form could not be verified.');
+    }
+
+    $snapshot_id = isset($_POST['snapshot_id']) ? sanitize_text_field(wp_unslash($_POST['snapshot_id'])) : '';
+    $snapshot = barnahus_find_event_dashboard_snapshot($snapshot_id);
+
+    if (!$snapshot || empty($snapshot['events']) || !is_array($snapshot['events'])) {
+        wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_restore_error' => 'missing')));
+        exit;
+    }
+
+    barnahus_capture_event_dashboard_snapshot('Before history restore');
+
+    $restored = 0;
+
+    foreach ($snapshot['events'] as $event_data) {
+        if (empty($event_data['post_id'])) {
+            continue;
+        }
+
+        $post_id = absint($event_data['post_id']);
+
+        if (!$post_id || !get_post($post_id) || !current_user_can('edit_post', $post_id)) {
+            continue;
+        }
+
+        wp_update_post(
+            array(
+                'ID' => $post_id,
+                'post_title' => isset($event_data['title']) ? sanitize_text_field($event_data['title']) : get_the_title($post_id),
+                'post_excerpt' => isset($event_data['excerpt']) ? sanitize_textarea_field($event_data['excerpt']) : '',
+            )
+        );
+
+        if (!empty($event_data['meta']) && is_array($event_data['meta'])) {
+            foreach ($event_data['meta'] as $meta_key => $meta_value) {
+                update_post_meta($post_id, sanitize_key($meta_key), is_string($meta_value) ? wp_kses_post($meta_value) : $meta_value);
+            }
+        }
+
+        if (isset($event_data['series'])) {
+            barnahus_set_event_series_names($post_id, $event_data['series']);
+        }
+
+        $restored++;
+    }
+
+    wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_restored' => '1', 'restored' => $restored)));
+    exit;
+}
+
 function barnahus_get_event_post_types() {
     return array(BARNAHUS_EVENT_CANONICAL_POST_TYPE, BARNAHUS_EVENT_POST_TYPE);
 }
@@ -186,6 +325,7 @@ function barnahus_render_events_dashboard_page() {
     $events = barnahus_get_events_for_dashboard();
     $legacy_events = barnahus_get_legacy_event_posts();
     $last_luma_refresh = get_option('barnahus_event_luma_last_refresh');
+    $snapshots = barnahus_get_event_dashboard_snapshots();
 
     ?>
     <div class="wrap">
@@ -201,6 +341,18 @@ function barnahus_render_events_dashboard_page() {
         <?php if (isset($_GET['barnahus_event_created'])) : ?>
             <div class="notice notice-success is-dismissible">
                 <p>Event card created.</p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['barnahus_event_restored'])) : ?>
+            <div class="notice notice-success is-dismissible">
+                <p>Event dashboard history restored for <?php echo esc_html(absint($_GET['restored'])); ?> event(s).</p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['barnahus_event_restore_error'])) : ?>
+            <div class="notice notice-error is-dismissible">
+                <p>That event dashboard history point could not be found.</p>
             </div>
         <?php endif; ?>
 
@@ -266,6 +418,38 @@ function barnahus_render_events_dashboard_page() {
             .barnahus-event-dashboard-create {
                 margin: 16px 0;
                 border-left: 4px solid #aeb9ee;
+            }
+
+            .barnahus-event-dashboard-history {
+                margin: 0 0 16px;
+                background: #fff;
+                border: 1px solid #c3c4c7;
+                padding: 12px 16px;
+            }
+
+            .barnahus-event-dashboard-history summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+
+            .barnahus-event-dashboard-history__list {
+                display: grid;
+                gap: 8px;
+                margin-top: 12px;
+            }
+
+            .barnahus-event-dashboard-history__item {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px 16px;
+                align-items: center;
+                justify-content: space-between;
+                border-top: 1px solid #dcdcde;
+                padding-top: 8px;
+            }
+
+            .barnahus-event-dashboard-history__item p {
+                margin: 0;
             }
 
             .barnahus-event-dashboard-create__title {
@@ -383,6 +567,33 @@ function barnahus_render_events_dashboard_page() {
                 <?php endif; ?>
             </div>
         </div>
+
+        <?php if ($snapshots) : ?>
+            <details class="barnahus-event-dashboard-history">
+                <summary>Version history</summary>
+                <p class="description">A restore point is saved before each dashboard save, Luma refresh, and history restore. Restoring brings back saved event-card settings for events that still exist.</p>
+                <div class="barnahus-event-dashboard-history__list">
+                    <?php foreach (array_slice($snapshots, 0, 8) as $snapshot) : ?>
+                        <div class="barnahus-event-dashboard-history__item">
+                            <p>
+                                <strong><?php echo esc_html(isset($snapshot['label']) ? $snapshot['label'] : 'Event dashboard snapshot'); ?></strong>
+                                <br>
+                                <span class="description">
+                                    <?php echo esc_html(date_i18n('j F Y H:i', isset($snapshot['created_at']) ? (int) $snapshot['created_at'] : time())); ?>
+                                    · <?php echo esc_html(isset($snapshot['events']) && is_array($snapshot['events']) ? count($snapshot['events']) : 0); ?> event(s)
+                                </span>
+                            </p>
+                            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                <input type="hidden" name="action" value="barnahus_restore_event_snapshot">
+                                <input type="hidden" name="snapshot_id" value="<?php echo esc_attr(isset($snapshot['id']) ? $snapshot['id'] : ''); ?>">
+                                <?php wp_nonce_field('barnahus_restore_event_snapshot', 'barnahus_restore_event_snapshot_nonce'); ?>
+                                <?php submit_button('Restore', 'secondary', 'submit', false); ?>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </details>
+        <?php endif; ?>
 
         <form class="barnahus-event-dashboard-create" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="barnahus_create_event_from_dashboard">
@@ -587,6 +798,8 @@ function barnahus_save_events_dashboard() {
 
     $events = isset($_POST['events']) && is_array($_POST['events']) ? wp_unslash($_POST['events']) : array();
 
+    barnahus_capture_event_dashboard_snapshot('Before dashboard save');
+
     foreach ($events as $post_id => $event_fields) {
         $post_id = absint($post_id);
 
@@ -640,6 +853,8 @@ function barnahus_create_event_from_dashboard() {
         exit;
     }
 
+    barnahus_capture_event_dashboard_snapshot('Before manual event card');
+
     $post_id = wp_insert_post(
         array(
             'post_type' => BARNAHUS_EVENT_CANONICAL_POST_TYPE,
@@ -690,6 +905,8 @@ function barnahus_refresh_luma_events_from_dashboard() {
         wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_luma_error' => '1')));
         exit;
     }
+
+    barnahus_capture_event_dashboard_snapshot('Before Luma refresh');
 
     $result = barnahus_import_luma_calendar_events($events);
     update_option('barnahus_event_luma_last_refresh', time());
@@ -973,6 +1190,8 @@ function barnahus_convert_event_pages_to_posts_from_dashboard() {
     if (!isset($_POST['barnahus_convert_events_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['barnahus_convert_events_nonce'])), 'barnahus_convert_event_pages_to_posts')) {
         wp_die('The event conversion form could not be verified.');
     }
+
+    barnahus_capture_event_dashboard_snapshot('Before event page conversion');
 
     $converted = barnahus_convert_legacy_event_pages_to_posts();
 
