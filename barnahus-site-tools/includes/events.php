@@ -1628,6 +1628,7 @@ function barnahus_get_registration_status_options() {
     return array(
         '' => 'No status',
         'open' => 'Registration open',
+        'approval-required' => 'Approval required',
         'closed' => 'Closed',
         'waitlist' => 'Waitlist',
         'coming-soon' => 'Coming soon',
@@ -1638,6 +1639,10 @@ function barnahus_get_registration_status_options() {
 function barnahus_migrate_legacy_registration_status($status) {
     if ('wait-list' === $status) {
         return 'waitlist';
+    }
+
+    if ('approval' === $status || 'requires-approval' === $status) {
+        return 'approval-required';
     }
 
     return $status;
