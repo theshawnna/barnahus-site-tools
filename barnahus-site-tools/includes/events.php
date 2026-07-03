@@ -779,13 +779,14 @@ function barnahus_render_events_dashboard_page() {
             }
 
             .barnahus-event-dashboard-card__preview {
-                max-width: 700px;
+                width: min(700px, 100%);
             }
 
             .barnahus-event-dashboard-card__preview .bh-event-card {
                 display: grid;
                 grid-template-columns: 50px minmax(0, 1fr);
                 gap: 14px;
+                width: 100%;
                 min-height: 340px;
                 box-sizing: border-box;
                 background: rgba(255, 255, 255, 0.64);
@@ -793,8 +794,8 @@ function barnahus_render_events_dashboard_page() {
                 padding: 18px;
             }
 
-            .barnahus-event-dashboard-card__preview .bh-event-card {
-                min-height: 340px;
+            .barnahus-event-dashboard-card__preview .bh-event-card.has-no-date {
+                grid-template-columns: 1fr;
             }
 
             .barnahus-event-dashboard-card__preview .bh-event-card.is-featured.is-pinned {
@@ -863,6 +864,7 @@ function barnahus_render_events_dashboard_page() {
                 margin: 0 0 7px;
                 font-size: 19px;
                 line-height: 1.18;
+                max-width: 560px;
             }
 
             .barnahus-event-dashboard-card__preview .bh-event-meta,
@@ -1326,6 +1328,58 @@ function barnahus_render_events_dashboard_page() {
             var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-event-filter]'));
             var listItems = Array.prototype.slice.call(document.querySelectorAll('[data-event-list-item]'));
             var panels = Array.prototype.slice.call(document.querySelectorAll('[data-event-panel]'));
+            var storageKey = 'barnahusEventDashboardState';
+
+            function getActiveEventId() {
+                var activeItem = document.querySelector('[data-event-list-item].is-active');
+                return activeItem ? activeItem.getAttribute('data-event-id') : '';
+            }
+
+            function saveDashboardState() {
+                if (!window.sessionStorage) {
+                    return;
+                }
+
+                sessionStorage.setItem(storageKey, JSON.stringify({
+                    filter: currentFilter,
+                    eventId: getActiveEventId(),
+                    search: searchInput ? searchInput.value : '',
+                    scrollY: window.scrollY || 0
+                }));
+            }
+
+            function restoreDashboardState() {
+                var saved = null;
+
+                if (window.sessionStorage) {
+                    try {
+                        saved = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
+                    } catch (error) {
+                        saved = null;
+                    }
+                }
+
+                if (!saved) {
+                    refreshVisibleEvents();
+                    return;
+                }
+
+                currentFilter = saved.filter || 'active';
+
+                tabs.forEach(function (tab) {
+                    tab.classList.toggle('is-active', tab.getAttribute('data-event-filter') === currentFilter);
+                });
+
+                if (searchInput && typeof saved.search === 'string') {
+                    searchInput.value = saved.search;
+                }
+
+                refreshVisibleEvents(saved.eventId || '');
+
+                window.setTimeout(function () {
+                    window.scrollTo(0, saved.scrollY || 0);
+                }, 0);
+            }
 
             function itemMatchesFilter(item) {
                 var filters = (item.getAttribute('data-event-filters') || '').split(' ');
@@ -1405,7 +1459,9 @@ function barnahus_render_events_dashboard_page() {
                 });
             }
 
-            refreshVisibleEvents();
+            restoreDashboardState();
+
+            form.addEventListener('submit', saveDashboardState);
 
             document.addEventListener('keydown', function (event) {
                 if (!(event.metaKey || event.ctrlKey) || event.key !== 'Enter') {
@@ -1413,6 +1469,7 @@ function barnahus_render_events_dashboard_page() {
                 }
 
                 event.preventDefault();
+                saveDashboardState();
 
                 if (typeof form.requestSubmit === 'function') {
                     form.requestSubmit();
