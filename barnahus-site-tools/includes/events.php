@@ -804,7 +804,7 @@ function barnahus_render_events_dashboard_page() {
                                 <div class="barnahus-event-dashboard-card__link-settings">
                                     <div class="barnahus-event-dashboard-card__field">
                                         <label for="barnahus_event_card_link_type_<?php echo esc_attr($post_id); ?>">Card link</label>
-                                        <select id="barnahus_event_card_link_type_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][card_link_type]">
+                                        <select id="barnahus_event_card_link_type_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][card_link_type]" class="barnahus-event-card-link-type">
                                             <?php foreach (barnahus_get_card_link_type_options() as $link_type_value => $link_type_label) : ?>
                                                 <option value="<?php echo esc_attr($link_type_value); ?>" <?php selected($card_link_type, $link_type_value); ?>><?php echo esc_html($link_type_label); ?></option>
                                             <?php endforeach; ?>
@@ -818,7 +818,7 @@ function barnahus_render_events_dashboard_page() {
 
                                     <div class="barnahus-event-dashboard-card__field">
                                         <label for="barnahus_event_custom_url_<?php echo esc_attr($post_id); ?>">Manual URL</label>
-                                        <input type="url" id="barnahus_event_custom_url_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][custom_url]" value="<?php echo esc_url($custom_url); ?>" placeholder="Any website, Zoom, or registration URL">
+                                        <input type="url" id="barnahus_event_custom_url_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][custom_url]" value="<?php echo esc_url($custom_url); ?>" placeholder="Any website, Zoom, or registration URL" class="barnahus-event-manual-url" data-card-link-select="barnahus_event_card_link_type_<?php echo esc_attr($post_id); ?>" data-initial-manual-url="<?php echo esc_attr($custom_url); ?>">
                                     </div>
                                 </div>
                                 <p class="barnahus-event-dashboard-card__link-note">Luma URL uses the synced event URL. Manual URL uses whatever URL you enter. Automatic post uses a WordPress post only after you create one.</p>
@@ -863,6 +863,21 @@ function barnahus_render_events_dashboard_page() {
 
                 form.submit();
             });
+
+            Array.prototype.forEach.call(document.querySelectorAll('.barnahus-event-manual-url'), function (input) {
+                var select = document.getElementById(input.getAttribute('data-card-link-select'));
+                var hadManualUrl = Boolean(input.getAttribute('data-initial-manual-url'));
+
+                if (!select || hadManualUrl) {
+                    return;
+                }
+
+                input.addEventListener('input', function () {
+                    if (input.value.trim()) {
+                        select.value = 'custom';
+                    }
+                });
+            });
         }());
     </script>
     <?php
@@ -898,8 +913,9 @@ function barnahus_save_events_dashboard() {
         update_post_meta($post_id, '_barnahus_event_hide_date', isset($event_fields['hide_date']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_date', isset($event_fields['date']) ? barnahus_normalize_event_date($event_fields['date']) : '');
         update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? sanitize_text_field($event_fields['location']) : '');
+        $card_link_type = barnahus_resolve_submitted_event_card_link_type($event_fields, $post_id, 'registration');
         update_post_meta($post_id, '_barnahus_event_custom_url', isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '');
-        update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'registration');
+        update_post_meta($post_id, '_barnahus_event_card_link_type', $card_link_type);
         update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : '');
 
         $series_names = isset($event_fields['series']) ? barnahus_parse_event_series_names($event_fields['series']) : array();
@@ -959,8 +975,9 @@ function barnahus_create_event_from_dashboard() {
     update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? sanitize_text_field($event_fields['location']) : '');
     update_post_meta($post_id, '_barnahus_event_luma_url', isset($event_fields['registration_url']) ? esc_url_raw($event_fields['registration_url']) : '');
     update_post_meta($post_id, '_barnahus_event_luma_embed_url', '');
+    $card_link_type = barnahus_resolve_submitted_event_card_link_type($event_fields, $post_id, 'custom');
     update_post_meta($post_id, '_barnahus_event_custom_url', isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '');
-    update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'custom');
+    update_post_meta($post_id, '_barnahus_event_card_link_type', $card_link_type);
     update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : 'coming-soon');
     update_post_meta($post_id, '_barnahus_event_featured', isset($event_fields['featured']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
@@ -1532,6 +1549,18 @@ function barnahus_normalize_card_link_type($link_type) {
     return $link_type;
 }
 
+function barnahus_resolve_submitted_event_card_link_type($event_fields, $post_id = 0, $default = 'registration') {
+    $link_type = isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : barnahus_normalize_card_link_type($default);
+    $manual_url = isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '';
+    $existing_manual_url = $post_id ? get_post_meta($post_id, '_barnahus_event_custom_url', true) : '';
+
+    if ($manual_url && !$existing_manual_url) {
+        return 'custom';
+    }
+
+    return $link_type;
+}
+
 function barnahus_add_event_details_meta_box($post_type, $post = null) {
     if (BARNAHUS_EVENT_POST_TYPE !== $post_type && (!$post || !barnahus_is_event_post($post->ID))) {
         return;
@@ -1732,6 +1761,15 @@ function barnahus_save_event_details($post_id) {
         return;
     }
 
+    $submitted_card_link_type = barnahus_resolve_submitted_event_card_link_type(
+        array(
+            'card_link_type' => isset($_POST['barnahus_event_card_link_type']) ? wp_unslash($_POST['barnahus_event_card_link_type']) : '',
+            'custom_url' => isset($_POST['barnahus_event_custom_url']) ? wp_unslash($_POST['barnahus_event_custom_url']) : '',
+        ),
+        $post_id,
+        'registration'
+    );
+
     $fields = array(
         '_barnahus_event_date' => array('barnahus_event_date', 'barnahus_normalize_event_date'),
         '_barnahus_event_start_time' => array('barnahus_event_start_time', 'sanitize_text_field'),
@@ -1740,7 +1778,6 @@ function barnahus_save_event_details($post_id) {
         '_barnahus_event_luma_url' => array('barnahus_event_luma_url', 'esc_url_raw'),
         '_barnahus_event_luma_embed_url' => array('barnahus_event_luma_embed_url', 'esc_url_raw'),
         '_barnahus_event_custom_url' => array('barnahus_event_custom_url', 'esc_url_raw'),
-        '_barnahus_event_card_link_type' => array('barnahus_event_card_link_type', 'barnahus_normalize_card_link_type'),
         '_barnahus_event_button_label' => array('barnahus_event_button_label', 'sanitize_text_field'),
         '_barnahus_event_registration_status' => array('barnahus_event_registration_status', 'barnahus_normalize_registration_status'),
     );
@@ -1751,6 +1788,7 @@ function barnahus_save_event_details($post_id) {
         update_post_meta($post_id, $meta_key, $value);
     }
 
+    update_post_meta($post_id, '_barnahus_event_card_link_type', $submitted_card_link_type);
     update_post_meta($post_id, '_barnahus_event_featured', isset($_POST['barnahus_event_featured']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_pinned', isset($_POST['barnahus_event_pinned']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_hidden', isset($_POST['barnahus_event_hidden']) ? '1' : '0');
