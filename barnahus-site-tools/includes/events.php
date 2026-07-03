@@ -2098,6 +2098,7 @@ function barnahus_render_event_card($event, $args = array()) {
     $end_time = get_post_meta($event->ID, '_barnahus_event_end_time', true);
     $location = get_post_meta($event->ID, '_barnahus_event_location', true);
     $featured = get_post_meta($event->ID, '_barnahus_event_featured', true) === '1';
+    $pinned = barnahus_is_event_pinned($event->ID);
     $hide_date = get_post_meta($event->ID, '_barnahus_event_hide_date', true) === '1';
     $registration_status_label = barnahus_get_registration_status_label(get_post_meta($event->ID, '_barnahus_event_registration_status', true));
     $series_names = barnahus_get_event_series_names($event->ID);
@@ -2112,7 +2113,7 @@ function barnahus_render_event_card($event, $args = array()) {
 
     ob_start();
     ?>
-    <article class="<?php echo esc_attr(barnahus_get_event_card_classes($featured, $args['compact'], $args['variant'], $hide_date)); ?>" aria-labelledby="bh-event-title-<?php echo esc_attr($event->ID); ?>">
+    <article class="<?php echo esc_attr(barnahus_get_event_card_classes($featured, $pinned, $args['compact'], $args['variant'], $hide_date)); ?>" aria-labelledby="bh-event-title-<?php echo esc_attr($event->ID); ?>">
         <?php if (!$hide_date) : ?>
             <time class="bh-event-date" datetime="<?php echo esc_attr($date); ?>">
                 <span class="bh-event-day"><?php echo esc_html($timestamp ? date_i18n('j', $timestamp) : 'TBA'); ?></span>
@@ -2322,14 +2323,14 @@ function barnahus_enqueue_events_assets() {
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'css/events.css',
         array(),
-        '1.0.4'
+        '1.0.5'
     );
 
     wp_enqueue_script(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
         array(),
-        '1.0.4',
+        '1.0.5',
         true
     );
 }
@@ -2430,11 +2431,15 @@ function barnahus_get_events_grid_style($columns, $min_width) {
     return '--bh-event-card-min-width: ' . absint($min_width) . 'px;';
 }
 
-function barnahus_get_event_card_classes($featured, $compact, $variant = 'standard', $hide_date = false) {
+function barnahus_get_event_card_classes($featured, $pinned, $compact, $variant = 'standard', $hide_date = false) {
     $classes = array('bh-event-card');
 
     if ($featured) {
         $classes[] = 'is-featured';
+    }
+
+    if ($pinned) {
+        $classes[] = 'is-pinned';
     }
 
     if ($hide_date) {
