@@ -609,7 +609,7 @@ function barnahus_render_events_dashboard_page() {
 
                 <div class="barnahus-event-dashboard-card__field">
                     <label for="barnahus_new_event_date">Date</label>
-                    <input type="date" id="barnahus_new_event_date" name="new_event[date]">
+                    <input type="text" id="barnahus_new_event_date" name="new_event[date]" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" inputmode="numeric" title="Use ISO format: YYYY-MM-DD">
                 </div>
 
                 <div class="barnahus-event-dashboard-card__field">
@@ -870,7 +870,7 @@ function barnahus_create_event_from_dashboard() {
         wp_die(esc_html($post_id->get_error_message()));
     }
 
-    update_post_meta($post_id, '_barnahus_event_date', isset($event_fields['date']) ? sanitize_text_field($event_fields['date']) : '');
+    update_post_meta($post_id, '_barnahus_event_date', isset($event_fields['date']) ? barnahus_normalize_event_date($event_fields['date']) : '');
     update_post_meta($post_id, '_barnahus_event_start_time', '');
     update_post_meta($post_id, '_barnahus_event_end_time', '');
     update_post_meta($post_id, '_barnahus_event_location', isset($event_fields['location']) ? sanitize_text_field($event_fields['location']) : '');
@@ -1455,7 +1455,7 @@ function barnahus_render_event_details_meta_box($post) {
         <div class="barnahus-event-field-row">
             <div class="barnahus-event-field">
                 <label for="barnahus_event_date">Date</label>
-                <input type="date" id="barnahus_event_date" name="barnahus_event_date" value="<?php echo esc_attr($event_date); ?>">
+                <input type="text" id="barnahus_event_date" name="barnahus_event_date" value="<?php echo esc_attr($event_date); ?>" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" inputmode="numeric" title="Use ISO format: YYYY-MM-DD">
             </div>
 
             <div class="barnahus-event-field">
@@ -1561,7 +1561,7 @@ function barnahus_save_event_details($post_id) {
     }
 
     $fields = array(
-        '_barnahus_event_date' => array('barnahus_event_date', 'sanitize_text_field'),
+        '_barnahus_event_date' => array('barnahus_event_date', 'barnahus_normalize_event_date'),
         '_barnahus_event_start_time' => array('barnahus_event_start_time', 'sanitize_text_field'),
         '_barnahus_event_end_time' => array('barnahus_event_end_time', 'sanitize_text_field'),
         '_barnahus_event_location' => array('barnahus_event_location', 'sanitize_text_field'),
@@ -1789,6 +1789,22 @@ function barnahus_normalize_event_time($time, $show_past = false) {
     }
 
     return $show_past ? 'all' : 'upcoming';
+}
+
+function barnahus_normalize_event_date($date) {
+    $date = sanitize_text_field($date);
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return '';
+    }
+
+    $parts = explode('-', $date);
+
+    if (!checkdate((int) $parts[1], (int) $parts[2], (int) $parts[0])) {
+        return '';
+    }
+
+    return $date;
 }
 
 function barnahus_compare_events_for_display($event_a, $event_b, $featured_order = 'pinned') {
