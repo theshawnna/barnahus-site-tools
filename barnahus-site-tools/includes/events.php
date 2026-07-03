@@ -2465,7 +2465,7 @@ function barnahus_format_event_meta($date, $start_time, $end_time, $location) {
     $timestamp = $date ? strtotime($date . ' ' . ($start_time ? $start_time : '00:00')) : false;
 
     if ($timestamp) {
-        $parts[] = date_i18n('l j F', $timestamp);
+        $parts[] = date_i18n('j F Y', $timestamp);
     }
 
     if ($start_time && $end_time) {
