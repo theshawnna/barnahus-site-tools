@@ -62,10 +62,21 @@ while IFS= read -r -d '' file; do
   fi
   remote_url="$curl_protocol://$FTP_HOST$FTP_REMOTE_PLUGIN_DIR/$rel"
 
-  curl \
+  upload_attempt=1
+  until curl \
     "${curl_args[@]}" \
     --upload-file "$file" \
     "$remote_url"
+  do
+    if [ "$upload_attempt" -ge 3 ]; then
+      echo "Upload failed after $upload_attempt attempts: $rel"
+      exit 1
+    fi
+
+    upload_attempt=$((upload_attempt + 1))
+    echo "Upload failed for $rel. Retrying attempt $upload_attempt of 3..."
+    sleep 3
+  done
 
   echo "Uploaded $rel"
 done < <(find "$PLUGIN_DIR" -type f ! -name '.DS_Store' -print0 | sort -z)
