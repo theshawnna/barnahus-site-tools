@@ -21,6 +21,7 @@ add_action('admin_post_barnahus_create_event_from_dashboard', 'barnahus_create_e
 add_action('admin_post_barnahus_refresh_luma_events', 'barnahus_refresh_luma_events_from_dashboard');
 add_action('admin_post_barnahus_convert_event_pages_to_posts', 'barnahus_convert_event_pages_to_posts_from_dashboard');
 add_action('admin_post_barnahus_restore_event_snapshot', 'barnahus_restore_event_snapshot_from_dashboard');
+add_action('admin_post_barnahus_create_event_post_page', 'barnahus_create_event_post_page_from_dashboard');
 add_action('add_meta_boxes', 'barnahus_add_event_details_meta_box');
 add_action('add_meta_boxes', 'barnahus_add_event_usage_meta_box');
 add_action('save_post_' . BARNAHUS_EVENT_POST_TYPE, 'barnahus_save_event_details');
@@ -170,6 +171,7 @@ function barnahus_get_event_snapshot_meta($post_id) {
         '_barnahus_event_featured',
         '_barnahus_event_pinned',
         '_barnahus_event_hidden',
+        '_barnahus_event_linked_post_id',
     );
 
     $meta = array();
@@ -341,6 +343,12 @@ function barnahus_render_events_dashboard_page() {
         <?php if (isset($_GET['barnahus_event_created'])) : ?>
             <div class="notice notice-success is-dismissible">
                 <p>Event card created.</p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['barnahus_event_post_created'])) : ?>
+            <div class="notice notice-success is-dismissible">
+                <p>Automatic event post created as a draft.</p>
             </div>
         <?php endif; ?>
 
@@ -537,6 +545,10 @@ function barnahus_render_events_dashboard_page() {
                 align-items: end;
             }
 
+            .barnahus-event-dashboard-card__post-action {
+                margin-top: 10px;
+            }
+
             @media (max-width: 782px) {
                 .barnahus-event-dashboard-card__full {
                     grid-column: auto;
@@ -650,25 +662,25 @@ function barnahus_render_events_dashboard_page() {
                 <div class="barnahus-event-dashboard-card__field barnahus-event-dashboard-card__full">
                     <div class="barnahus-event-dashboard-card__link-settings">
                         <div class="barnahus-event-dashboard-card__field">
-                            <label for="barnahus_new_event_card_link_type">Card link destination</label>
+                            <label for="barnahus_new_event_card_link_type">Card link</label>
                             <select id="barnahus_new_event_card_link_type" name="new_event[card_link_type]">
                                 <?php foreach (barnahus_get_card_link_type_options() as $link_type_value => $link_type_label) : ?>
-                                    <option value="<?php echo esc_attr($link_type_value); ?>" <?php selected('none', $link_type_value); ?>><?php echo esc_html($link_type_label); ?></option>
+                                    <option value="<?php echo esc_attr($link_type_value); ?>" <?php selected('custom', $link_type_value); ?>><?php echo esc_html($link_type_label); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
                         <div class="barnahus-event-dashboard-card__field">
-                            <label for="barnahus_new_event_registration_url">Registration URL</label>
-                            <input type="url" id="barnahus_new_event_registration_url" name="new_event[registration_url]" placeholder="Registration URL">
+                            <label for="barnahus_new_event_registration_url">Luma URL</label>
+                            <input type="url" id="barnahus_new_event_registration_url" name="new_event[registration_url]" placeholder="Set by Luma refresh" readonly>
                         </div>
 
                         <div class="barnahus-event-dashboard-card__field">
-                            <label for="barnahus_new_event_custom_url">Manual card URL</label>
-                            <input type="url" id="barnahus_new_event_custom_url" name="new_event[custom_url]" placeholder="Manual card URL">
+                            <label for="barnahus_new_event_custom_url">Manual URL</label>
+                            <input type="url" id="barnahus_new_event_custom_url" name="new_event[custom_url]" placeholder="Any website, Zoom, or registration URL">
                         </div>
                     </div>
-                    <p class="barnahus-event-dashboard-card__link-note">Website event page keeps visitors on this site. Registration URL sends them straight to registration. Manual card URL uses the manual URL field.</p>
+                    <p class="barnahus-event-dashboard-card__link-note">Luma URL uses the synced event URL. Manual URL uses whatever URL you enter. Automatic post uses a WordPress post only after you create one.</p>
                 </div>
             </div>
 
@@ -694,6 +706,7 @@ function barnahus_render_events_dashboard_page() {
                     $registration_url = get_post_meta($post_id, '_barnahus_event_luma_url', true);
                     $custom_url = get_post_meta($post_id, '_barnahus_event_custom_url', true);
                     $card_link_type = barnahus_normalize_card_link_type(get_post_meta($post_id, '_barnahus_event_card_link_type', true));
+                    $linked_post_id = barnahus_get_event_linked_post_id($post_id);
                     $featured = get_post_meta($post_id, '_barnahus_event_featured', true) === '1';
                     $pinned = barnahus_is_event_pinned($post_id);
                     $hidden = get_post_meta($post_id, '_barnahus_event_hidden', true) === '1';
@@ -711,8 +724,13 @@ function barnahus_render_events_dashboard_page() {
                                 </div>
                             </div>
                             <div>
-                                <a href="<?php echo esc_url(get_edit_post_link($post_id)); ?>">Edit page</a>
-                                <?php if ('publish' === $event->post_status) : ?>
+                                <a href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php echo BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id) ? 'Edit post' : 'Edit record'; ?></a>
+                                <?php if ($linked_post_id) : ?>
+                                    <span> | </span><a href="<?php echo esc_url(get_edit_post_link($linked_post_id)); ?>">Edit linked post</a>
+                                    <?php if ('publish' === get_post_status($linked_post_id)) : ?>
+                                        <span> | </span><a href="<?php echo esc_url(get_permalink($linked_post_id)); ?>">View post</a>
+                                    <?php endif; ?>
+                                <?php elseif (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id) && 'publish' === $event->post_status) : ?>
                                     <span> | </span><a href="<?php echo esc_url(get_permalink($event)); ?>">View</a>
                                 <?php endif; ?>
                             </div>
@@ -756,7 +774,7 @@ function barnahus_render_events_dashboard_page() {
                             <div class="barnahus-event-dashboard-card__field barnahus-event-dashboard-card__full">
                                 <div class="barnahus-event-dashboard-card__link-settings">
                                     <div class="barnahus-event-dashboard-card__field">
-                                        <label for="barnahus_event_card_link_type_<?php echo esc_attr($post_id); ?>">Card link destination</label>
+                                        <label for="barnahus_event_card_link_type_<?php echo esc_attr($post_id); ?>">Card link</label>
                                         <select id="barnahus_event_card_link_type_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][card_link_type]">
                                             <?php foreach (barnahus_get_card_link_type_options() as $link_type_value => $link_type_label) : ?>
                                                 <option value="<?php echo esc_attr($link_type_value); ?>" <?php selected($card_link_type, $link_type_value); ?>><?php echo esc_html($link_type_label); ?></option>
@@ -765,16 +783,25 @@ function barnahus_render_events_dashboard_page() {
                                     </div>
 
                                     <div class="barnahus-event-dashboard-card__field">
-                                        <label for="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>">Registration URL</label>
-                                        <input type="url" id="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][registration_url]" value="<?php echo esc_url($registration_url); ?>" placeholder="Registration URL">
+                                        <label for="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>">Luma URL</label>
+                                        <input type="url" id="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>" value="<?php echo esc_url($registration_url); ?>" placeholder="Set by Luma refresh" readonly>
                                     </div>
 
                                     <div class="barnahus-event-dashboard-card__field">
-                                        <label for="barnahus_event_custom_url_<?php echo esc_attr($post_id); ?>">Manual card URL</label>
-                                        <input type="url" id="barnahus_event_custom_url_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][custom_url]" value="<?php echo esc_url($custom_url); ?>" placeholder="Manual card URL">
+                                        <label for="barnahus_event_custom_url_<?php echo esc_attr($post_id); ?>">Manual URL</label>
+                                        <input type="url" id="barnahus_event_custom_url_<?php echo esc_attr($post_id); ?>" name="events[<?php echo esc_attr($post_id); ?>][custom_url]" value="<?php echo esc_url($custom_url); ?>" placeholder="Any website, Zoom, or registration URL">
                                     </div>
                                 </div>
-                                <p class="barnahus-event-dashboard-card__link-note">Website event page keeps visitors on this site. Registration URL sends them straight to registration. Manual card URL uses the manual URL field.</p>
+                                <p class="barnahus-event-dashboard-card__link-note">Luma URL uses the synced event URL. Manual URL uses whatever URL you enter. Automatic post uses a WordPress post only after you create one.</p>
+                                <?php if (BARNAHUS_EVENT_CANONICAL_POST_TYPE !== get_post_type($post_id)) : ?>
+                                    <div class="barnahus-event-dashboard-card__post-action">
+                                        <?php if ($linked_post_id) : ?>
+                                            <span class="description">Automatic post created.</span>
+                                        <?php else : ?>
+                                            <a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=barnahus_create_event_post_page&event_id=' . absint($post_id)), 'barnahus_create_event_post_page_' . absint($post_id), 'barnahus_create_event_post_page_nonce')); ?>">Create automatic post</a>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </section>
@@ -814,9 +841,8 @@ function barnahus_save_events_dashboard() {
         update_post_meta($post_id, '_barnahus_event_featured', isset($event_fields['featured']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_hidden', isset($event_fields['hidden']) ? '1' : '0');
-        update_post_meta($post_id, '_barnahus_event_luma_url', isset($event_fields['registration_url']) ? esc_url_raw($event_fields['registration_url']) : '');
         update_post_meta($post_id, '_barnahus_event_custom_url', isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '');
-        update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'event-page');
+        update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'registration');
         update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : '');
 
         $series_names = isset($event_fields['series']) ? barnahus_parse_event_series_names($event_fields['series']) : array();
@@ -857,7 +883,7 @@ function barnahus_create_event_from_dashboard() {
 
     $post_id = wp_insert_post(
         array(
-            'post_type' => BARNAHUS_EVENT_CANONICAL_POST_TYPE,
+            'post_type' => BARNAHUS_EVENT_POST_TYPE,
             'post_status' => 'publish',
             'post_title' => $title,
             'post_excerpt' => isset($event_fields['excerpt']) ? sanitize_textarea_field($event_fields['excerpt']) : '',
@@ -877,7 +903,7 @@ function barnahus_create_event_from_dashboard() {
     update_post_meta($post_id, '_barnahus_event_luma_url', isset($event_fields['registration_url']) ? esc_url_raw($event_fields['registration_url']) : '');
     update_post_meta($post_id, '_barnahus_event_luma_embed_url', '');
     update_post_meta($post_id, '_barnahus_event_custom_url', isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '');
-    update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'none');
+    update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'custom');
     update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : 'coming-soon');
     update_post_meta($post_id, '_barnahus_event_featured', isset($event_fields['featured']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
@@ -888,6 +914,77 @@ function barnahus_create_event_from_dashboard() {
 
     wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_created' => '1')));
     exit;
+}
+
+function barnahus_create_event_post_page_from_dashboard() {
+    $event_id = isset($_REQUEST['event_id']) ? absint($_REQUEST['event_id']) : 0;
+
+    if (!$event_id || !current_user_can('edit_post', $event_id)) {
+        wp_die('You do not have permission to create an event post.');
+    }
+
+    if (!isset($_REQUEST['barnahus_create_event_post_page_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['barnahus_create_event_post_page_nonce'])), 'barnahus_create_event_post_page_' . $event_id)) {
+        wp_die('The event post form could not be verified.');
+    }
+
+    if (!barnahus_is_event_post($event_id)) {
+        wp_die('That event could not be found.');
+    }
+
+    $linked_post_id = barnahus_get_event_linked_post_id($event_id);
+
+    if (!$linked_post_id) {
+        barnahus_capture_event_dashboard_snapshot('Before automatic post creation');
+        $linked_post_id = barnahus_create_event_post_page($event_id);
+    }
+
+    if (is_wp_error($linked_post_id)) {
+        wp_die(esc_html($linked_post_id->get_error_message()));
+    }
+
+    wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_post_created' => '1', 'post_id' => absint($linked_post_id))));
+    exit;
+}
+
+function barnahus_create_event_post_page($event_id) {
+    $event = get_post($event_id);
+
+    if (!$event) {
+        return new WP_Error('barnahus_event_missing', 'The event could not be found.');
+    }
+
+    if (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($event_id)) {
+        update_post_meta($event_id, '_barnahus_event_card_link_type', 'automatic-post');
+        return $event_id;
+    }
+
+    $post_id = wp_insert_post(
+        array(
+            'post_type' => BARNAHUS_EVENT_CANONICAL_POST_TYPE,
+            'post_status' => 'draft',
+            'post_title' => $event->post_title,
+            'post_excerpt' => $event->post_excerpt,
+            'post_content' => '',
+        ),
+        true
+    );
+
+    if (is_wp_error($post_id)) {
+        return $post_id;
+    }
+
+    foreach (barnahus_get_event_snapshot_meta($event_id) as $meta_key => $meta_value) {
+        update_post_meta($post_id, $meta_key, $meta_value);
+    }
+
+    update_post_meta($event_id, '_barnahus_event_linked_post_id', $post_id);
+    update_post_meta($event_id, '_barnahus_event_card_link_type', 'automatic-post');
+    update_post_meta($post_id, '_barnahus_event_source_record_id', $event_id);
+    update_post_meta($post_id, '_barnahus_event_card_link_type', 'automatic-post');
+
+    barnahus_set_event_series_names($post_id, barnahus_get_event_series_names($event_id));
+
+    return $post_id;
 }
 
 function barnahus_refresh_luma_events_from_dashboard() {
@@ -1094,7 +1191,7 @@ function barnahus_find_event_post_by_registration_url($registration_url) {
 function barnahus_create_event_post_from_luma($event) {
     $post_id = wp_insert_post(
         array(
-            'post_type' => BARNAHUS_EVENT_CANONICAL_POST_TYPE,
+            'post_type' => BARNAHUS_EVENT_POST_TYPE,
             'post_status' => 'publish',
             'post_title' => $event['title'],
             'post_excerpt' => '',
@@ -1114,7 +1211,7 @@ function barnahus_create_event_post_from_luma($event) {
 
 function barnahus_update_event_from_luma($post_id, $event, $is_new = false) {
     if ($is_new) {
-        update_post_meta($post_id, '_barnahus_event_card_link_type', 'event-page');
+        update_post_meta($post_id, '_barnahus_event_card_link_type', 'registration');
         update_post_meta($post_id, '_barnahus_event_registration_status', 'open');
         update_post_meta($post_id, '_barnahus_event_featured', '0');
         update_post_meta($post_id, '_barnahus_event_pinned', '0');
@@ -1346,23 +1443,31 @@ function barnahus_get_registration_status_label($status) {
 
 function barnahus_get_card_link_type_options() {
     return array(
-        'none' => 'No card link',
-        'event-page' => 'Website event page',
-        'registration' => 'Registration URL (direct)',
-        'custom' => 'Manual card URL',
+        'registration' => 'Luma URL',
+        'custom' => 'Manual URL',
+        'automatic-post' => 'Automatic post',
     );
 }
 
 function barnahus_normalize_card_link_type($link_type) {
     $link_type = sanitize_key($link_type);
+
+    if ('event-page' === $link_type) {
+        return 'automatic-post';
+    }
+
+    if ('none' === $link_type) {
+        return 'custom';
+    }
+
     $allowed_link_types = array_keys(barnahus_get_card_link_type_options());
 
     if (!$link_type) {
-        return 'event-page';
+        return 'registration';
     }
 
     if (!in_array($link_type, $allowed_link_types, true)) {
-        return 'event-page';
+        return 'registration';
     }
 
     return $link_type;
@@ -1475,30 +1580,30 @@ function barnahus_render_event_details_meta_box($post) {
         </div>
 
         <div class="barnahus-event-field">
-            <label for="barnahus_event_card_link_type">Card link destination</label>
+            <label for="barnahus_event_card_link_type">Card link</label>
             <select id="barnahus_event_card_link_type" name="barnahus_event_card_link_type">
                 <?php foreach (barnahus_get_card_link_type_options() as $link_type_value => $link_type_label) : ?>
                     <option value="<?php echo esc_attr($link_type_value); ?>" <?php selected($card_link_type, $link_type_value); ?>><?php echo esc_html($link_type_label); ?></option>
                 <?php endforeach; ?>
             </select>
-            <p class="description">Website event page keeps visitors on this site. Registration URL sends them straight to registration. Manual card URL uses the manual URL field.</p>
+            <p class="description">Luma URL uses the synced event URL. Manual URL uses whatever URL you enter. Automatic post uses a WordPress post only after you create one.</p>
         </div>
 
         <div class="barnahus-event-field">
-            <label for="barnahus_event_luma_url">Registration URL</label>
+            <label for="barnahus_event_luma_url">Luma URL</label>
             <input type="url" id="barnahus_event_luma_url" name="barnahus_event_luma_url" value="<?php echo esc_url($luma_url); ?>">
         </div>
 
         <div class="barnahus-event-field">
             <label for="barnahus_event_luma_embed_url">Embedded registration URL override</label>
             <input type="url" id="barnahus_event_luma_embed_url" name="barnahus_event_luma_embed_url" value="<?php echo esc_url($luma_embed_url); ?>">
-            <p class="description">Usually leave blank. Event pages use the Registration URL automatically when it can be embedded; add an override only if a registration service gives you a separate iframe URL.</p>
+            <p class="description">Usually leave blank. Event pages use the Luma URL automatically when it can be embedded; add an override only if a registration service gives you a separate iframe URL.</p>
         </div>
 
         <div class="barnahus-event-field">
-            <label for="barnahus_event_custom_url">Manual card URL</label>
+            <label for="barnahus_event_custom_url">Manual URL</label>
             <input type="url" id="barnahus_event_custom_url" name="barnahus_event_custom_url" value="<?php echo esc_url($custom_url); ?>">
-            <p class="description">Optional. Used only when the card link destination is Manual card URL.</p>
+            <p class="description">Optional. Used only when Card link is Manual URL.</p>
         </div>
 
         <div class="barnahus-event-field">
@@ -1918,14 +2023,10 @@ function barnahus_get_event_card_link($event) {
     $registration_url = get_post_meta($event->ID, '_barnahus_event_luma_url', true);
     $custom_url = get_post_meta($event->ID, '_barnahus_event_custom_url', true);
 
-    if ('none' === $link_type) {
-        return null;
-    }
-
     if ('registration' === $link_type && $registration_url) {
         return array(
             'url' => $registration_url,
-            'label' => 'Register',
+            'label' => 'Read more',
         );
     }
 
@@ -1936,10 +2037,39 @@ function barnahus_get_event_card_link($event) {
         );
     }
 
-    return array(
-        'url' => get_permalink($event),
-        'label' => 'Read more',
-    );
+    if ('automatic-post' === $link_type) {
+        $linked_post_id = barnahus_get_event_linked_post_id($event->ID);
+
+        if ($linked_post_id && 'publish' === get_post_status($linked_post_id)) {
+            return array(
+                'url' => get_permalink($linked_post_id),
+                'label' => 'Read more',
+            );
+        }
+
+        if (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($event->ID) && 'publish' === get_post_status($event->ID)) {
+            return array(
+                'url' => get_permalink($event),
+                'label' => 'Read more',
+            );
+        }
+    }
+
+    return null;
+}
+
+function barnahus_get_event_linked_post_id($event_id) {
+    if (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($event_id)) {
+        return absint($event_id);
+    }
+
+    $linked_post_id = absint(get_post_meta($event_id, '_barnahus_event_linked_post_id', true));
+
+    if (!$linked_post_id || BARNAHUS_EVENT_CANONICAL_POST_TYPE !== get_post_type($linked_post_id)) {
+        return 0;
+    }
+
+    return $linked_post_id;
 }
 
 function barnahus_get_event_registration_embed_url($post_id) {
