@@ -2,8 +2,9 @@
     --bh-event-card-min-width: 360px;
     --bh-event-card-row-height: 260px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--bh-event-card-min-width)), 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-auto-rows: var(--bh-event-card-row-height);
+    grid-auto-flow: dense;
     gap: 18px;
     width: 100%;
     align-items: stretch;
@@ -21,8 +22,47 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.bh-events-grid--columns-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+.bh-events-calendar {
+    display: grid;
+    gap: 18px;
+    width: 100%;
+}
+
+.bh-events-calendar__pinned-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.bh-events-calendar__pinned-column {
+    display: grid;
+    gap: 18px;
+}
+
+.bh-events-calendar__pinned-column .bh-event-card.is-featured {
+    min-height: calc((var(--bh-event-card-row-height, 260px) * 2) + 18px);
+}
+
+.bh-event-month-section {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.bh-event-month-section--beside-pinned {
+    margin-bottom: 0;
+}
+
+.bh-event-month-heading h2 {
+    margin: 0;
+    padding-top: 16px;
+    border-top: 3px solid #111;
+}
+
+.bh-event-month-section--beside-pinned .bh-events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .bh-event-card {
@@ -46,7 +86,6 @@
 .bh-event-card.is-featured {
     grid-row: span 2;
     background: rgba(255, 255, 255, 0.64);
-    border-color: #b9c3ed;
 }
 
 .bh-event-card--quiet {
@@ -58,14 +97,15 @@
 .bh-event-card--quiet.is-featured {
     background: rgba(255, 255, 255, 0.64);
     border-color: transparent;
-    box-shadow: inset 0 3px 0 #aeb9ee;
+    box-shadow: none;
 }
 
 .bh-event-card.is-featured.is-pinned,
 .bh-event-card--quiet.is-featured.is-pinned {
     background: rgba(174, 185, 238, 0.24);
     border-color: rgba(174, 185, 238, 0.72);
-    box-shadow: inset 0 3px 0 #8f9fe8;
+    border-top: 3px solid #8f9fe8;
+    box-shadow: none;
 }
 
 .bh-event-card--plain {
@@ -76,7 +116,6 @@
 
 .bh-event-card--plain.is-featured {
     background: transparent;
-    border-color: #b9c3ed;
 }
 
 .bh-event-content {
@@ -90,7 +129,7 @@
     display: block;
     border-right: 1px solid rgba(17, 17, 17, 0.12);
     padding-right: 11px;
-    color: #6f3b30;
+    color: #111;
     font-weight: 800;
     text-decoration: none;
 }
@@ -178,7 +217,7 @@
     display: inline-block;
     width: fit-content;
     margin-top: auto;
-    color: #6f3b30;
+    color: #111;
     font-weight: 800;
     text-decoration: none;
     border-bottom: 2px solid currentColor;
@@ -254,17 +293,25 @@
 }
 
 @media (max-width: 900px) {
-    .bh-events-grid--columns-3,
-    .bh-events-grid--columns-4 {
+    .bh-events-grid,
+    .bh-events-grid--columns-3 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bh-events-calendar__pinned-layout,
+    .bh-event-month-section {
+        grid-template-columns: 1fr;
+    }
+
+    .bh-events-calendar__pinned-column .bh-event-card.is-featured {
+        min-height: auto;
     }
 }
 
 @media (max-width: 640px) {
     .bh-events-grid,
     .bh-events-grid--columns-2,
-    .bh-events-grid--columns-3,
-    .bh-events-grid--columns-4 {
+    .bh-events-grid--columns-3 {
         --bh-event-card-row-height: 250px;
         grid-template-columns: 1fr;
     }
@@ -285,5 +332,9 @@
 
     .bh-event-day {
         font-size: 29px;
+    }
+
+    .bh-event-month-heading h2 {
+        padding-top: 14px;
     }
 }

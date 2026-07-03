@@ -619,6 +619,23 @@ function barnahus_render_events_dashboard_page() {
                 align-items: end;
             }
 
+            .barnahus-event-dashboard-card__url-row {
+                display: flex;
+                gap: 8px;
+                align-items: stretch;
+            }
+
+            .barnahus-event-dashboard-card__url-row input[type="url"] {
+                min-width: 0;
+            }
+
+            .barnahus-event-dashboard-card__url-row .button {
+                display: inline-flex;
+                align-items: center;
+                min-height: 40px;
+                white-space: nowrap;
+            }
+
             .barnahus-event-dashboard-card__post-action {
                 margin-top: 10px;
             }
@@ -892,7 +909,12 @@ function barnahus_render_events_dashboard_page() {
 
                                     <div class="barnahus-event-dashboard-card__field">
                                         <label for="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>">Luma URL</label>
-                                        <input type="url" id="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>" value="<?php echo esc_url($registration_url); ?>" placeholder="Set by Luma refresh" readonly>
+                                        <div class="barnahus-event-dashboard-card__url-row">
+                                            <input type="url" id="barnahus_event_registration_url_<?php echo esc_attr($post_id); ?>" value="<?php echo esc_url($registration_url); ?>" placeholder="Set by Luma refresh" readonly>
+                                            <?php if ($registration_url) : ?>
+                                                <a class="button button-secondary" href="<?php echo esc_url($registration_url); ?>" target="_blank" rel="noopener noreferrer">Open</a>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
 
                                     <div class="barnahus-event-dashboard-card__field">
@@ -2019,11 +2041,168 @@ function barnahus_events_shortcode($atts) {
 
     ob_start();
     ?>
-    <div class="<?php echo esc_attr(barnahus_get_events_grid_classes($columns, $compact, $variant)); ?>" style="<?php echo esc_attr(barnahus_get_events_grid_style($columns, $min_width)); ?>">
-        <?php foreach ($events as $event) : ?>
-            <?php echo barnahus_render_event_card($event, array('compact' => $compact, 'variant' => $variant, 'description_words' => $description_words, 'show_description' => $show_description)); ?>
-        <?php endforeach; ?>
+    <?php echo barnahus_render_events_calendar($events, array('columns' => $columns, 'compact' => $compact, 'variant' => $variant, 'min_width' => $min_width, 'description_words' => $description_words, 'show_description' => $show_description, 'featured_order' => $featured_order)); ?>
+    <?php
+    return ob_get_clean();
+}
+
+function barnahus_render_events_calendar($events, $args = array()) {
+    $args = wp_parse_args(
+        $args,
+        array(
+            'columns' => 'auto',
+            'compact' => false,
+            'variant' => 'quiet',
+            'min_width' => 360,
+            'description_words' => 22,
+            'show_description' => true,
+            'featured_order' => 'pinned',
+        )
+    );
+
+    $pinned_events = array();
+    $calendar_events = array();
+
+    foreach ($events as $event) {
+        $is_featured = get_post_meta($event->ID, '_barnahus_event_featured', true) === '1';
+        $is_pinned = barnahus_is_event_pinned($event->ID);
+
+        if ('pinned' === $args['featured_order'] && $is_featured && $is_pinned) {
+            $pinned_events[] = $event;
+            continue;
+        }
+
+        $calendar_events[] = $event;
+    }
+
+    $event_args = array(
+        'compact' => $args['compact'],
+        'variant' => $args['variant'],
+        'description_words' => $args['description_words'],
+        'show_description' => $args['show_description'],
+    );
+
+    ob_start();
+    ?>
+    <div class="bh-events-calendar">
+        <?php if ($pinned_events && $calendar_events) : ?>
+            <?php $first_month_key = barnahus_get_event_month_key($calendar_events[0]->ID); ?>
+            <?php $first_month_events = array(); ?>
+            <?php $later_events = array(); ?>
+            <?php foreach ($calendar_events as $event) : ?>
+                <?php if (barnahus_get_event_month_key($event->ID) === $first_month_key) : ?>
+                    <?php $first_month_events[] = $event; ?>
+                <?php else : ?>
+                    <?php $later_events[] = $event; ?>
+                <?php endif; ?>
+            <?php endforeach; ?>
+            <?php $top_month_events = array_slice($first_month_events, 0, 3); ?>
+            <?php $remaining_events = array_merge(array_slice($first_month_events, 3), $later_events); ?>
+
+            <div class="bh-events-calendar__pinned-layout">
+                <div class="bh-events-calendar__pinned-column">
+                    <?php foreach ($pinned_events as $event) : ?>
+                        <?php echo barnahus_render_event_card($event, $event_args); ?>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php echo barnahus_render_event_month_section($first_month_key, $top_month_events, $event_args, $args, true); ?>
+            </div>
+
+            <?php echo barnahus_render_event_continuation_sections($remaining_events, $event_args, $args, $first_month_key); ?>
+        <?php else : ?>
+            <?php echo barnahus_render_event_month_sections(array_merge($pinned_events, $calendar_events), $event_args, $args); ?>
+        <?php endif; ?>
     </div>
+    <?php
+    return ob_get_clean();
+}
+
+function barnahus_render_event_continuation_sections($events, $event_args, $grid_args, $continued_month_key = '') {
+    if (!$events) {
+        return '';
+    }
+
+    $continued_events = array();
+    $remaining_events = array();
+    $still_continuing = true;
+
+    foreach ($events as $event) {
+        $month_key = barnahus_get_event_month_key($event->ID);
+
+        if ($still_continuing && $month_key === $continued_month_key) {
+            $continued_events[] = $event;
+            continue;
+        }
+
+        $still_continuing = false;
+        $remaining_events[] = $event;
+    }
+
+    ob_start();
+    ?>
+    <?php if ($continued_events) : ?>
+        <div class="<?php echo esc_attr(barnahus_get_events_grid_classes($grid_args['columns'], $grid_args['compact'], $grid_args['variant'])); ?>" style="<?php echo esc_attr(barnahus_get_events_grid_style($grid_args['columns'], $grid_args['min_width'])); ?>">
+            <?php foreach ($continued_events as $event) : ?>
+                <?php echo barnahus_render_event_card($event, $event_args); ?>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+    <?php echo barnahus_render_event_month_sections($remaining_events, $event_args, $grid_args); ?>
+    <?php
+    return ob_get_clean();
+}
+
+function barnahus_render_event_month_sections($events, $event_args, $grid_args) {
+    if (!$events) {
+        return '';
+    }
+
+    $groups = array();
+
+    foreach ($events as $event) {
+        $month_key = barnahus_get_event_month_key($event->ID);
+
+        if (!isset($groups[$month_key])) {
+            $groups[$month_key] = array();
+        }
+
+        $groups[$month_key][] = $event;
+    }
+
+    ob_start();
+
+    foreach ($groups as $month_key => $month_events) {
+        echo barnahus_render_event_month_section($month_key, $month_events, $event_args, $grid_args);
+    }
+
+    return ob_get_clean();
+}
+
+function barnahus_render_event_month_section($month_key, $events, $event_args, $grid_args, $beside_pinned = false) {
+    if (!$events) {
+        return '';
+    }
+
+    $classes = array('bh-event-month-section');
+
+    if ($beside_pinned) {
+        $classes[] = 'bh-event-month-section--beside-pinned';
+    }
+
+    ob_start();
+    ?>
+    <section class="<?php echo esc_attr(implode(' ', $classes)); ?>" aria-labelledby="bh-event-month-<?php echo esc_attr(sanitize_html_class($month_key)); ?>">
+        <div class="bh-event-month-heading">
+            <h2 id="bh-event-month-<?php echo esc_attr(sanitize_html_class($month_key)); ?>"><?php echo esc_html(barnahus_format_event_month_heading($month_key)); ?></h2>
+        </div>
+
+        <div class="<?php echo esc_attr(barnahus_get_events_grid_classes($grid_args['columns'], $grid_args['compact'], $grid_args['variant'])); ?>" style="<?php echo esc_attr(barnahus_get_events_grid_style($grid_args['columns'], $grid_args['min_width'])); ?>">
+            <?php foreach ($events as $event) : ?>
+                <?php echo barnahus_render_event_card($event, $event_args); ?>
+            <?php endforeach; ?>
+        </div>
+    </section>
     <?php
     return ob_get_clean();
 }
@@ -2198,6 +2377,36 @@ function barnahus_normalize_event_date($date) {
     }
 
     return $date;
+}
+
+function barnahus_get_event_month_key($post_id) {
+    $date = get_post_meta($post_id, '_barnahus_event_date', true);
+
+    if (!$date) {
+        return 'forthcoming';
+    }
+
+    $timestamp = strtotime($date);
+
+    if (!$timestamp) {
+        return 'forthcoming';
+    }
+
+    return date('Y-m', $timestamp);
+}
+
+function barnahus_format_event_month_heading($month_key) {
+    if ('forthcoming' === $month_key) {
+        return 'TBA';
+    }
+
+    $timestamp = strtotime($month_key . '-01');
+
+    if (!$timestamp) {
+        return 'TBA';
+    }
+
+    return strtoupper(date_i18n('M Y', $timestamp));
 }
 
 function barnahus_compare_events_for_display($event_a, $event_b, $featured_order = 'pinned') {
@@ -2515,14 +2724,14 @@ function barnahus_enqueue_events_assets() {
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'css/events.css',
         array(),
-        '1.0.8'
+        '1.0.9'
     );
 
     wp_enqueue_script(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
         array(),
-        '1.0.8',
+        '1.0.9',
         true
     );
 }
@@ -2534,7 +2743,7 @@ function barnahus_normalize_event_columns($columns) {
 
     $columns = absint($columns);
 
-    if ($columns < 1 || $columns > 4) {
+    if ($columns < 1 || $columns > 3) {
         return 'auto';
     }
 
