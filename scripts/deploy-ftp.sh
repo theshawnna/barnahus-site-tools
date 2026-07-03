@@ -69,6 +69,30 @@ while IFS= read -r -d '' file; do
     "$remote_url"
   do
     if [ "$upload_attempt" -ge 3 ]; then
+      if command -v lftp >/dev/null 2>&1; then
+        echo "Upload failed after $upload_attempt curl attempts: $rel"
+        echo "Trying lftp fallback for $rel..."
+
+        lftp_host="${FTP_RESOLVE_IP:-$FTP_HOST}"
+        lftp_remote_dir="$FTP_REMOTE_PLUGIN_DIR"
+        if [[ "$rel" == */* ]]; then
+          lftp_remote_dir="$FTP_REMOTE_PLUGIN_DIR/${rel%/*}"
+        fi
+
+        lftp_commands=""
+        if [ "$FTP_PROTOCOL" = "ftps" ]; then
+          lftp_commands="set ftp:ssl-force true; set ftp:ssl-protect-data true; "
+          if [ "${FTP_RESOLVE_IP:-}" != "" ]; then
+            lftp_commands+="set ssl:verify-certificate no; "
+          fi
+        fi
+        lftp_commands+="put -O $lftp_remote_dir $file; bye"
+
+        if lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$lftp_host" -e "$lftp_commands"; then
+          break
+        fi
+      fi
+
       echo "Upload failed after $upload_attempt attempts: $rel"
       exit 1
     fi
