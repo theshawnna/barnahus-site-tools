@@ -23,6 +23,7 @@ add_action('admin_post_barnahus_convert_event_pages_to_posts', 'barnahus_convert
 add_action('admin_post_barnahus_restore_event_snapshot', 'barnahus_restore_event_snapshot_from_dashboard');
 add_action('admin_post_barnahus_create_event_post_page', 'barnahus_create_event_post_page_from_dashboard');
 add_action('admin_post_barnahus_unarchive_event', 'barnahus_unarchive_event_from_dashboard');
+add_action('admin_post_barnahus_delete_event_from_dashboard', 'barnahus_delete_event_from_dashboard');
 add_action('add_meta_boxes', 'barnahus_add_event_details_meta_box');
 add_action('add_meta_boxes', 'barnahus_add_event_usage_meta_box');
 add_action('save_post_' . BARNAHUS_EVENT_POST_TYPE, 'barnahus_save_event_details');
@@ -374,6 +375,12 @@ function barnahus_render_events_dashboard_page() {
             </div>
         <?php endif; ?>
 
+        <?php if (isset($_GET['barnahus_event_deleted'])) : ?>
+            <div class="notice notice-success is-dismissible">
+                <p>Event moved to trash.</p>
+            </div>
+        <?php endif; ?>
+
         <?php if (isset($_GET['barnahus_event_restore_error'])) : ?>
             <div class="notice notice-error is-dismissible">
                 <p>That event dashboard history point could not be found.</p>
@@ -558,6 +565,17 @@ function barnahus_render_events_dashboard_page() {
                 justify-content: flex-end;
             }
 
+            .barnahus-event-dashboard-card__danger {
+                border-color: #d63638;
+                color: #b32d2e;
+            }
+
+            .barnahus-event-dashboard-card__danger:hover,
+            .barnahus-event-dashboard-card__danger:focus {
+                border-color: #b32d2e;
+                color: #8a2424;
+            }
+
             .barnahus-event-dashboard-card__title {
                 margin: 0;
                 font-size: 16px;
@@ -723,6 +741,11 @@ function barnahus_render_events_dashboard_page() {
                 cursor: pointer;
                 padding: 10px;
                 text-align: left;
+            }
+
+            .barnahus-event-dashboard-list__item[hidden],
+            .barnahus-event-dashboard-card[hidden] {
+                display: none !important;
             }
 
             .barnahus-event-dashboard-list__item:hover,
@@ -1198,6 +1221,9 @@ function barnahus_render_events_dashboard_page() {
                                 <?php elseif ($is_wordpress_post && 'publish' === $event->post_status) : ?>
                                     <a class="button button-secondary" href="<?php echo esc_url(get_permalink($event)); ?>">View post</a>
                                 <?php endif; ?>
+                                <?php if (current_user_can('delete_post', $post_id)) : ?>
+                                    <a class="button button-secondary barnahus-event-dashboard-card__danger" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=barnahus_delete_event_from_dashboard&event_id=' . absint($post_id)), 'barnahus_delete_event_' . absint($post_id), 'barnahus_delete_event_nonce')); ?>" data-event-delete-link>Move to trash</a>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -1452,6 +1478,14 @@ function barnahus_render_events_dashboard_page() {
                 });
             });
 
+            Array.prototype.forEach.call(document.querySelectorAll('[data-event-delete-link]'), function (link) {
+                link.addEventListener('click', function (event) {
+                    if (!window.confirm('Move this event to the trash? You can restore it from WordPress trash if needed.')) {
+                        event.preventDefault();
+                    }
+                });
+            });
+
             if (searchInput) {
                 searchInput.addEventListener('input', function () {
                     var activeItem = document.querySelector('[data-event-list-item].is-active');
@@ -1662,6 +1696,28 @@ function barnahus_unarchive_event_from_dashboard() {
     update_post_meta($event_id, '_barnahus_event_archived', '0');
 
     wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_unarchived' => '1')));
+    exit;
+}
+
+function barnahus_delete_event_from_dashboard() {
+    $event_id = isset($_REQUEST['event_id']) ? absint($_REQUEST['event_id']) : 0;
+
+    if (!$event_id || !current_user_can('delete_post', $event_id)) {
+        wp_die('You do not have permission to delete this event.');
+    }
+
+    if (!isset($_REQUEST['barnahus_delete_event_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['barnahus_delete_event_nonce'])), 'barnahus_delete_event_' . $event_id)) {
+        wp_die('The event delete link could not be verified.');
+    }
+
+    if (!barnahus_is_event_post($event_id)) {
+        wp_die('That event could not be found.');
+    }
+
+    barnahus_capture_event_dashboard_snapshot('Before event trash');
+    wp_trash_post($event_id);
+
+    wp_safe_redirect(barnahus_get_events_dashboard_url(array('barnahus_event_deleted' => '1')));
     exit;
 }
 
@@ -1910,7 +1966,7 @@ function barnahus_find_event_post_by_registration_url($registration_url) {
     $matches = get_posts(
         array(
             'post_type' => barnahus_get_event_post_types(),
-            'post_status' => array('publish', 'draft', 'pending', 'future'),
+            'post_status' => array('publish', 'draft', 'pending', 'future', 'trash'),
             'posts_per_page' => 1,
             'meta_key' => '_barnahus_event_luma_url',
             'meta_value' => esc_url_raw($registration_url),
