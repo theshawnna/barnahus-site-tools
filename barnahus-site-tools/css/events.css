@@ -36,6 +36,10 @@
     padding: 18px;
 }
 
+.bh-event-card.has-no-date {
+    grid-template-columns: 1fr;
+}
+
 .bh-event-card.is-featured {
     background: rgba(255, 255, 255, 0.64);
     border-color: #b9c3ed;
@@ -256,6 +260,10 @@
         grid-template-columns: 52px minmax(0, 1fr);
         gap: 13px;
         padding: 17px;
+    }
+
+    .bh-event-card.has-no-date {
+        grid-template-columns: 1fr;
     }
 
     .bh-event-card.is-featured {

@@ -171,6 +171,7 @@ function barnahus_get_event_snapshot_meta($post_id) {
         '_barnahus_event_featured',
         '_barnahus_event_pinned',
         '_barnahus_event_hidden',
+        '_barnahus_event_hide_date',
         '_barnahus_event_linked_post_id',
     );
 
@@ -660,6 +661,10 @@ function barnahus_render_events_dashboard_page() {
                         <input type="checkbox" name="new_event[pinned]" value="1" checked>
                         Pinned to top
                     </label>
+                    <label>
+                        <input type="checkbox" name="new_event[hide_date]" value="1">
+                        Hide date on card
+                    </label>
                 </div>
 
                 <div class="barnahus-event-dashboard-card__field barnahus-event-dashboard-card__full">
@@ -718,6 +723,7 @@ function barnahus_render_events_dashboard_page() {
                     $featured = get_post_meta($post_id, '_barnahus_event_featured', true) === '1';
                     $pinned = barnahus_is_event_pinned($post_id);
                     $hidden = get_post_meta($post_id, '_barnahus_event_hidden', true) === '1';
+                    $hide_date = get_post_meta($post_id, '_barnahus_event_hide_date', true) === '1';
                     $registration_status = get_post_meta($post_id, '_barnahus_event_registration_status', true);
                     $series = barnahus_get_event_series_names($post_id);
                     $excerpt = get_the_excerpt($event);
@@ -757,6 +763,10 @@ function barnahus_render_events_dashboard_page() {
                                 <label>
                                     <input type="checkbox" name="events[<?php echo esc_attr($post_id); ?>][hidden]" value="1" <?php checked($hidden); ?>>
                                     Hidden
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="events[<?php echo esc_attr($post_id); ?>][hide_date]" value="1" <?php checked($hide_date); ?>>
+                                    Hide date on card
                                 </label>
                             </div>
 
@@ -874,6 +884,7 @@ function barnahus_save_events_dashboard() {
         update_post_meta($post_id, '_barnahus_event_featured', isset($event_fields['featured']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_hidden', isset($event_fields['hidden']) ? '1' : '0');
+        update_post_meta($post_id, '_barnahus_event_hide_date', isset($event_fields['hide_date']) ? '1' : '0');
         update_post_meta($post_id, '_barnahus_event_custom_url', isset($event_fields['custom_url']) ? esc_url_raw($event_fields['custom_url']) : '');
         update_post_meta($post_id, '_barnahus_event_card_link_type', isset($event_fields['card_link_type']) ? barnahus_normalize_card_link_type($event_fields['card_link_type']) : 'registration');
         update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : '');
@@ -940,6 +951,7 @@ function barnahus_create_event_from_dashboard() {
     update_post_meta($post_id, '_barnahus_event_registration_status', isset($event_fields['registration_status']) ? barnahus_normalize_registration_status($event_fields['registration_status']) : 'coming-soon');
     update_post_meta($post_id, '_barnahus_event_featured', isset($event_fields['featured']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_pinned', isset($event_fields['pinned']) ? '1' : '0');
+    update_post_meta($post_id, '_barnahus_event_hide_date', isset($event_fields['hide_date']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_hidden', '0');
 
     $series_names = isset($event_fields['series']) ? barnahus_parse_event_series_names($event_fields['series']) : array();
@@ -1248,6 +1260,7 @@ function barnahus_update_event_from_luma($post_id, $event, $is_new = false) {
         update_post_meta($post_id, '_barnahus_event_registration_status', 'open');
         update_post_meta($post_id, '_barnahus_event_featured', '0');
         update_post_meta($post_id, '_barnahus_event_pinned', '0');
+        update_post_meta($post_id, '_barnahus_event_hide_date', '0');
         update_post_meta($post_id, '_barnahus_event_hidden', '0');
 
         if (!empty($event['category'])) {
@@ -1561,6 +1574,7 @@ function barnahus_render_event_details_meta_box($post) {
     $featured = get_post_meta($post->ID, '_barnahus_event_featured', true);
     $pinned = barnahus_is_event_pinned($post->ID);
     $hidden = get_post_meta($post->ID, '_barnahus_event_hidden', true);
+    $hide_date = get_post_meta($post->ID, '_barnahus_event_hide_date', true);
     ?>
     <style>
         .barnahus-event-fields {
@@ -1673,6 +1687,13 @@ function barnahus_render_event_details_meta_box($post) {
                 Hidden: do not show this event in the public grid
             </label>
         </div>
+
+        <div class="barnahus-event-field">
+            <label>
+                <input type="checkbox" name="barnahus_event_hide_date" value="1" <?php checked($hide_date, '1'); ?>>
+                Hide date on card
+            </label>
+        </div>
     </div>
     <?php
 }
@@ -1720,6 +1741,7 @@ function barnahus_save_event_details($post_id) {
     update_post_meta($post_id, '_barnahus_event_featured', isset($_POST['barnahus_event_featured']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_pinned', isset($_POST['barnahus_event_pinned']) ? '1' : '0');
     update_post_meta($post_id, '_barnahus_event_hidden', isset($_POST['barnahus_event_hidden']) ? '1' : '0');
+    update_post_meta($post_id, '_barnahus_event_hide_date', isset($_POST['barnahus_event_hide_date']) ? '1' : '0');
 }
 
 function barnahus_events_shortcode($atts) {
@@ -2000,6 +2022,7 @@ function barnahus_render_event_card($event, $args = array()) {
     $end_time = get_post_meta($event->ID, '_barnahus_event_end_time', true);
     $location = get_post_meta($event->ID, '_barnahus_event_location', true);
     $featured = get_post_meta($event->ID, '_barnahus_event_featured', true) === '1';
+    $hide_date = get_post_meta($event->ID, '_barnahus_event_hide_date', true) === '1';
     $registration_status_label = barnahus_get_registration_status_label(get_post_meta($event->ID, '_barnahus_event_registration_status', true));
     $series_names = barnahus_get_event_series_names($event->ID);
     $visible_series_names = array_slice($series_names, 0, $featured ? 2 : 1);
@@ -2013,11 +2036,13 @@ function barnahus_render_event_card($event, $args = array()) {
 
     ob_start();
     ?>
-    <article class="<?php echo esc_attr(barnahus_get_event_card_classes($featured, $args['compact'], $args['variant'])); ?>" aria-labelledby="bh-event-title-<?php echo esc_attr($event->ID); ?>">
-        <time class="bh-event-date" datetime="<?php echo esc_attr($date); ?>">
-            <span class="bh-event-day"><?php echo esc_html($timestamp ? date_i18n('j', $timestamp) : 'TBA'); ?></span>
-            <span class="bh-event-month"><?php echo esc_html($timestamp ? date_i18n('M', $timestamp) : ''); ?></span>
-        </time>
+    <article class="<?php echo esc_attr(barnahus_get_event_card_classes($featured, $args['compact'], $args['variant'], $hide_date)); ?>" aria-labelledby="bh-event-title-<?php echo esc_attr($event->ID); ?>">
+        <?php if (!$hide_date) : ?>
+            <time class="bh-event-date" datetime="<?php echo esc_attr($date); ?>">
+                <span class="bh-event-day"><?php echo esc_html($timestamp ? date_i18n('j', $timestamp) : 'TBA'); ?></span>
+                <span class="bh-event-month"><?php echo esc_html($timestamp ? date_i18n('M', $timestamp) : ''); ?></span>
+            </time>
+        <?php endif; ?>
 
         <div class="bh-event-content">
             <div class="bh-event-tags">
@@ -2035,7 +2060,7 @@ function barnahus_render_event_card($event, $args = array()) {
             <h3 class="bh-event-title" id="bh-event-title-<?php echo esc_attr($event->ID); ?>"><?php echo esc_html(get_the_title($event)); ?></h3>
 
             <p class="bh-event-meta">
-                <?php echo esc_html(barnahus_format_event_meta($date, $start_time, $end_time, $location)); ?>
+                <?php echo esc_html(barnahus_format_event_meta($hide_date ? '' : $date, '', '', $location)); ?>
             </p>
 
             <?php if ($args['show_description'] && !$args['compact'] && $description) : ?>
@@ -2135,12 +2160,10 @@ function barnahus_render_event_single_content($content) {
 
     $post_id = get_the_ID();
     $date = get_post_meta($post_id, '_barnahus_event_date', true);
-    $start_time = get_post_meta($post_id, '_barnahus_event_start_time', true);
-    $end_time = get_post_meta($post_id, '_barnahus_event_end_time', true);
     $location = get_post_meta($post_id, '_barnahus_event_location', true);
     $luma_url = get_post_meta($post_id, '_barnahus_event_luma_url', true);
     $registration_embed_url = barnahus_get_event_registration_embed_url($post_id);
-    $meta = barnahus_format_event_meta($date, $start_time, $end_time, $location);
+    $meta = barnahus_format_event_meta($date, '', '', $location);
 
     ob_start();
     ?>
@@ -2223,14 +2246,14 @@ function barnahus_enqueue_events_assets() {
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'css/events.css',
         array(),
-        '1.0.2'
+        '1.0.3'
     );
 
     wp_enqueue_script(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
         array(),
-        '1.0.2',
+        '1.0.3',
         true
     );
 }
@@ -2331,11 +2354,15 @@ function barnahus_get_events_grid_style($columns, $min_width) {
     return '--bh-event-card-min-width: ' . absint($min_width) . 'px;';
 }
 
-function barnahus_get_event_card_classes($featured, $compact, $variant = 'standard') {
+function barnahus_get_event_card_classes($featured, $compact, $variant = 'standard', $hide_date = false) {
     $classes = array('bh-event-card');
 
     if ($featured) {
         $classes[] = 'is-featured';
+    }
+
+    if ($hide_date) {
+        $classes[] = 'has-no-date';
     }
 
     if ($compact) {
