@@ -63,9 +63,9 @@
 
 .bh-event-card.is-featured.is-pinned,
 .bh-event-card--quiet.is-featured.is-pinned {
-    background: var(--wp--preset--color--theme-3, #eeebe8);
-    border-color: rgba(17, 17, 17, 0.12);
-    box-shadow: inset 0 3px 0 #aeb9ee;
+    background: rgba(174, 185, 238, 0.24);
+    border-color: rgba(174, 185, 238, 0.72);
+    box-shadow: inset 0 3px 0 #8f9fe8;
 }
 
 .bh-event-card--plain {
