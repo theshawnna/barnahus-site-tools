@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Barnahus Site Tools
  * Description: Custom functionality for barnahus.eu.
- * Version: 1.1.3
+ * Version: 1.1.4
  * Author: Barnahus Europe
  */
 

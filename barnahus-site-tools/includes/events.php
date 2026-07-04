@@ -2619,7 +2619,7 @@ function barnahus_render_events_calendar($events, $args = array()) {
     ob_start();
     ?>
     <div class="bh-events-calendar">
-        <?php if ($pinned_events && $calendar_events) : ?>
+        <?php if (1 === count($pinned_events) && $calendar_events) : ?>
             <?php $first_month_key = barnahus_get_event_month_key($calendar_events[0]->ID); ?>
             <?php $first_month_events = array(); ?>
             <?php $later_events = array(); ?>
@@ -2644,6 +2644,14 @@ function barnahus_render_events_calendar($events, $args = array()) {
             </div>
 
             <?php echo barnahus_render_event_continuation_sections($remaining_events, $event_args, $args, $first_month_key); ?>
+        <?php elseif ($pinned_events) : ?>
+            <div class="bh-events-calendar__pinned-grid">
+                <?php foreach ($pinned_events as $event) : ?>
+                    <?php echo barnahus_render_event_card($event, $event_args); ?>
+                <?php endforeach; ?>
+            </div>
+
+            <?php echo barnahus_render_event_month_sections($calendar_events, $event_args, $args); ?>
         <?php else : ?>
             <?php echo barnahus_render_event_month_sections(array_merge($pinned_events, $calendar_events), $event_args, $args); ?>
         <?php endif; ?>

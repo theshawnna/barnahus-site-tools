@@ -44,6 +44,15 @@
     min-height: calc((var(--bh-event-card-row-height, 260px) * 2) + 18px);
 }
 
+.bh-events-calendar__pinned-grid {
+    --bh-event-card-row-height: 260px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: var(--bh-event-card-row-height);
+    grid-auto-flow: dense;
+    gap: 18px;
+}
+
 .bh-event-month-section {
     display: grid;
     grid-template-columns: 112px minmax(0, 1fr);
@@ -294,6 +303,7 @@
 
 @media (max-width: 900px) {
     .bh-events-grid,
+    .bh-events-calendar__pinned-grid,
     .bh-events-grid--columns-3 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -310,6 +320,7 @@
 
 @media (max-width: 640px) {
     .bh-events-grid,
+    .bh-events-calendar__pinned-grid,
     .bh-events-grid--columns-2,
     .bh-events-grid--columns-3 {
         --bh-event-card-row-height: 250px;
