@@ -3265,18 +3265,21 @@ function barnahus_format_dashboard_datetime($timestamp) {
 }
 
 function barnahus_enqueue_events_assets() {
+    $events_css_path = dirname(__DIR__) . '/css/events.css';
+    $events_js_path = dirname(__DIR__) . '/js/events.js';
+
     wp_enqueue_style(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'css/events.css',
         array(),
-        '1.1.0'
+        file_exists($events_css_path) ? (string) filemtime($events_css_path) : '1.1.0'
     );
 
     wp_enqueue_script(
         'barnahus-events',
         plugin_dir_url(dirname(__FILE__)) . 'js/events.js',
         array(),
-        '1.1.0',
+        file_exists($events_js_path) ? (string) filemtime($events_js_path) : '1.1.0',
         true
     );
 }

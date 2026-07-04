@@ -2,7 +2,7 @@ Hi Thord. I built these things because buy me a coffee has a bit annoying behavi
 
 # Barnahus Site Tools
 
-Version: 1.1.5
+Version: 1.1.6
 
 A custom WordPress plugin containing functionality specific to the Barnahus Network website (https://barnahus.eu).
 
