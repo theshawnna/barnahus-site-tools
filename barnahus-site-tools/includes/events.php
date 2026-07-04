@@ -2598,10 +2598,9 @@ function barnahus_render_events_calendar($events, $args = array()) {
     $calendar_events = array();
 
     foreach ($events as $event) {
-        $is_featured = get_post_meta($event->ID, '_barnahus_event_featured', true) === '1';
         $is_pinned = barnahus_is_event_pinned($event->ID);
 
-        if ('pinned' === $args['featured_order'] && $is_featured && $is_pinned) {
+        if ('pinned' === $args['featured_order'] && $is_pinned) {
             $pinned_events[] = $event;
             continue;
         }
