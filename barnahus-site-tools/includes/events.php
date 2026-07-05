@@ -8,6 +8,7 @@ const BARNAHUS_EVENT_POST_TYPE = 'barnahus_event';
 const BARNAHUS_EVENT_SERIES_TAXONOMY = 'barnahus_event_series';
 const BARNAHUS_EVENT_CANONICAL_POST_TYPE = 'post';
 const BARNAHUS_EVENT_TAG_SLUG = 'event';
+const BARNAHUS_EVENT_CATEGORY_SLUG = 'event';
 const BARNAHUS_EVENT_LUMA_CALENDAR_URL = 'https://luma.com/Barnahus';
 const BARNAHUS_EVENT_REWRITE_VERSION = '2026-07-03-public-events';
 const BARNAHUS_EVENT_SNAPSHOTS_OPTION = 'barnahus_event_dashboard_snapshots';
@@ -1731,6 +1732,7 @@ function barnahus_create_event_post_page($event_id) {
     if (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($event_id)) {
         update_post_meta($event_id, '_barnahus_event_card_link_type', 'automatic-post');
         barnahus_ensure_event_post_tag($event_id);
+        barnahus_ensure_event_post_category($event_id);
         return $event_id;
     }
 
@@ -1761,6 +1763,7 @@ function barnahus_create_event_post_page($event_id) {
 
     barnahus_set_event_series_names($post_id, barnahus_get_event_series_names($event_id));
     barnahus_ensure_event_post_tag($post_id);
+    barnahus_ensure_event_post_category($post_id);
 
     return $post_id;
 }
@@ -2112,6 +2115,7 @@ function barnahus_convert_legacy_event_pages_to_posts() {
         }
 
         barnahus_set_event_series_names($post_id, $series_names);
+        barnahus_ensure_event_post_category($post_id);
         $converted++;
     }
 
@@ -2162,6 +2166,7 @@ function barnahus_set_event_series_names($post_id, $series_names) {
     if (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($post_id)) {
         $tag_names = array_merge(array('event'), $series_names);
         wp_set_object_terms($post_id, $tag_names, 'post_tag', false);
+        barnahus_ensure_event_post_category($post_id);
         return;
     }
 
@@ -2174,6 +2179,32 @@ function barnahus_ensure_event_post_tag($post_id) {
     }
 
     wp_set_object_terms($post_id, array(BARNAHUS_EVENT_TAG_SLUG), 'post_tag', true);
+}
+
+function barnahus_ensure_event_post_category($post_id) {
+    if (BARNAHUS_EVENT_CANONICAL_POST_TYPE !== get_post_type($post_id)) {
+        return;
+    }
+
+    $category = get_term_by('slug', BARNAHUS_EVENT_CATEGORY_SLUG, 'category');
+
+    if (!$category) {
+        $category = get_term_by('name', 'Event', 'category');
+    }
+
+    if (!$category) {
+        $created = wp_insert_term('Event', 'category', array('slug' => BARNAHUS_EVENT_CATEGORY_SLUG));
+
+        if (is_wp_error($created)) {
+            return;
+        }
+
+        $category_id = absint($created['term_id']);
+    } else {
+        $category_id = absint($category->term_id);
+    }
+
+    wp_set_post_categories($post_id, array($category_id), false);
 }
 
 function barnahus_get_event_dashboard_state($post_id, $post_status) {
