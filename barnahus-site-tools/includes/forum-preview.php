@@ -4,6 +4,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!get_option('barnahus_forum_preview_enabled')) {
+    return;
+}
+
 add_action('template_redirect', 'barnahus_forum_preview_route');
 
 function barnahus_forum_preview_route() {
