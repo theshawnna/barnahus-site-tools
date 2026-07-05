@@ -1064,7 +1064,7 @@ function barnahus_render_events_dashboard_page() {
                         Featured
                     </label>
                     <label>
-                        <input type="checkbox" name="new_event[pinned]" value="1" checked>
+                        <input type="checkbox" name="new_event[pinned]" value="1">
                         Pinned to top
                     </label>
                     <label>
@@ -1730,6 +1730,7 @@ function barnahus_create_event_post_page($event_id) {
 
     if (BARNAHUS_EVENT_CANONICAL_POST_TYPE === get_post_type($event_id)) {
         update_post_meta($event_id, '_barnahus_event_card_link_type', 'automatic-post');
+        barnahus_ensure_event_post_tag($event_id);
         return $event_id;
     }
 
@@ -1740,6 +1741,7 @@ function barnahus_create_event_post_page($event_id) {
             'post_title' => $event->post_title,
             'post_excerpt' => $event->post_excerpt,
             'post_content' => '',
+            'tags_input' => array(BARNAHUS_EVENT_TAG_SLUG),
         ),
         true
     );
@@ -1758,6 +1760,7 @@ function barnahus_create_event_post_page($event_id) {
     update_post_meta($post_id, '_barnahus_event_card_link_type', 'automatic-post');
 
     barnahus_set_event_series_names($post_id, barnahus_get_event_series_names($event_id));
+    barnahus_ensure_event_post_tag($post_id);
 
     return $post_id;
 }
@@ -2163,6 +2166,14 @@ function barnahus_set_event_series_names($post_id, $series_names) {
     }
 
     wp_set_object_terms($post_id, $series_names, BARNAHUS_EVENT_SERIES_TAXONOMY, false);
+}
+
+function barnahus_ensure_event_post_tag($post_id) {
+    if (BARNAHUS_EVENT_CANONICAL_POST_TYPE !== get_post_type($post_id)) {
+        return;
+    }
+
+    wp_set_object_terms($post_id, array(BARNAHUS_EVENT_TAG_SLUG), 'post_tag', true);
 }
 
 function barnahus_get_event_dashboard_state($post_id, $post_status) {
