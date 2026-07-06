@@ -24,7 +24,7 @@
 - Replace the Event Dashboard table with responsive event panels for easier editing.
 - Add Event Series tags, featured ordering, hidden events, and event card styling.
 - Add responsive event grids, visual variants, compact mode, single-card shortcode support, and event-date admin sorting.
-- Add newsletter tracking URL helper.
+- Add newsletter tracking URL helper and local newsletter link generator.
 
 ## 1.0.0
 

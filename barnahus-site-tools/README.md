@@ -2,7 +2,7 @@ Hi Thord. I built these things because buy me a coffee has a bit annoying behavi
 
 # Barnahus Site Tools
 
-Version: 1.2.3
+Version: 1.2.4
 
 A custom WordPress plugin containing functionality specific to the Barnahus Network website (https://barnahus.eu).
 
@@ -175,6 +175,69 @@ Featured events appear first, then all other upcoming events. Events are sorted 
 
 ---
 
+### Newsletter Link Tracking
+
+Adds a helper for creating Matomo-friendly newsletter links before sending through Brevo.
+
+Convention:
+
+```text
+utm_source=newsletter
+utm_medium=email
+utm_campaign=YYYY-MM or YYYY-MM-topic
+utm_content=section-or-link-name
+```
+
+PHP helper:
+
+```php
+echo esc_url(barnahus_newsletter_tracked_url(
+    'https://barnahus.eu/forum/',
+    '2026-07',
+    'forum'
+));
+```
+
+The helper preserves existing non-UTM query parameters and anchors, removes existing `utm_*` parameters, then adds the Barnahus newsletter values.
+
+For newsletter preparation outside WordPress, open the local generator in the outer repository checkout:
+
+```text
+../tools/newsletter-link-tracker.html
+```
+
+Suggested content labels:
+
+- forum
+- lunch-learn
+- library
+- policy
+- member-spotlight
+- coming-up
+- evaluation
+- elpis
+- safeguarding
+- evivi
+- quality-standards
+
+Example links:
+
+```text
+Forum:
+https://barnahus.eu/forum/?utm_source=newsletter&utm_medium=email&utm_campaign=2026-07&utm_content=forum
+
+Library / ELPIS:
+https://barnahus.eu/library/?utm_source=newsletter&utm_medium=email&utm_campaign=2026-07&utm_content=elpis
+
+Policy Watch:
+https://barnahus.eu/policy/?utm_source=newsletter&utm_medium=email&utm_campaign=2026-07&utm_content=policy
+
+Member Spotlight:
+https://barnahus.eu/members/?utm_source=newsletter&utm_medium=email&utm_campaign=2026-07&utm_content=member-spotlight
+```
+
+---
+
 ## Folder structure
 
 ```
@@ -191,6 +254,7 @@ barnahus-site-tools/
 └── includes/
     ├── events.php
     ├── init.php
+    ├── helpers.php
     ├── featured-post.php
     └── bmc.php
 ```

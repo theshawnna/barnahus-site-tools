@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Barnahus Newsletter Link Tracker</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #5f6f7f;
+      --line: #d8dee6;
+      --panel: #f7f9fb;
+      --brand: #0b6b68;
+      --brand-dark: #084d4b;
+      --focus: #f6c85f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+      line-height: 1.45;
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 32px auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 0 24px;
+      color: var(--muted);
+      max-width: 720px;
+    }
+
+    .tool {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 6px;
+      font-weight: 650;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 11px 12px;
+      font: inherit;
+      background: #ffffff;
+      color: var(--ink);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus,
+    button:focus {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--brand);
+      color: #ffffff;
+    }
+
+    button.secondary {
+      background: #34495e;
+    }
+
+    button:hover {
+      background: var(--brand-dark);
+    }
+
+    button.secondary:hover {
+      background: #233140;
+    }
+
+    .examples {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .example {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #ffffff;
+    }
+
+    .example strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .example code {
+      overflow-wrap: anywhere;
+      color: var(--muted);
+    }
+
+    .status {
+      min-height: 1.4em;
+      margin-top: 10px;
+      color: var(--brand-dark);
+      font-weight: 650;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        margin: 20px auto;
+      }
+
+      .grid,
+      .examples {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Barnahus Newsletter Link Tracker</h1>
+    <p>Generate Matomo-friendly newsletter URLs with the standard Barnahus source, medium, campaign, and content labels.</p>
+
+    <section class="tool" aria-label="Tracked URL generator">
+      <div class="grid">
+        <div class="full">
+          <label for="destination">Destination URL</label>
+          <input id="destination" type="url" value="https://barnahus.eu/forum/" placeholder="https://barnahus.eu/forum/">
+        </div>
+
+        <div>
+          <label for="campaign">Campaign</label>
+          <input id="campaign" type="text" value="2026-07" placeholder="2026-07 or 2026-07-topic">
+        </div>
+
+        <div>
+          <label for="content">Content label</label>
+          <select id="content">
+            <option value="forum">forum</option>
+            <option value="lunch-learn">lunch-learn</option>
+            <option value="library">library</option>
+            <option value="policy">policy</option>
+            <option value="member-spotlight">member-spotlight</option>
+            <option value="coming-up">coming-up</option>
+            <option value="evaluation">evaluation</option>
+            <option value="elpis">elpis</option>
+            <option value="safeguarding">safeguarding</option>
+            <option value="evivi">evivi</option>
+            <option value="quality-standards">quality-standards</option>
+          </select>
+        </div>
+
+        <div class="full">
+          <label for="custom-content">Custom content label</label>
+          <input id="custom-content" type="text" placeholder="Optional: overrides the dropdown">
+        </div>
+
+        <div class="full">
+          <label for="result">Tracked URL</label>
+          <textarea id="result" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="copy">Copy tracked URL</button>
+        <button type="button" id="forum" class="secondary">Forum</button>
+        <button type="button" id="library" class="secondary">Library / ELPIS</button>
+        <button type="button" id="policy" class="secondary">Policy Watch</button>
+        <button type="button" id="member" class="secondary">Member Spotlight</button>
+      </div>
+
+      <div class="status" id="status" aria-live="polite"></div>
+    </section>
+
+    <section class="examples" aria-label="Example tracked URLs">
+      <div class="example">
+        <strong>Forum</strong>
+        <code>https://barnahus.eu/forum/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=2026-07&amp;utm_content=forum</code>
+      </div>
+      <div class="example">
+        <strong>Library / ELPIS</strong>
+        <code>https://barnahus.eu/library/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=2026-07&amp;utm_content=elpis</code>
+      </div>
+      <div class="example">
+        <strong>Policy Watch</strong>
+        <code>https://barnahus.eu/policy/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=2026-07&amp;utm_content=policy</code>
+      </div>
+      <div class="example">
+        <strong>Member Spotlight</strong>
+        <code>https://barnahus.eu/members/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=2026-07&amp;utm_content=member-spotlight</code>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const destinationInput = document.querySelector("#destination");
+    const campaignInput = document.querySelector("#campaign");
+    const contentSelect = document.querySelector("#content");
+    const customContentInput = document.querySelector("#custom-content");
+    const resultOutput = document.querySelector("#result");
+    const statusOutput = document.querySelector("#status");
+
+    const presets = {
+      forum: ["https://barnahus.eu/forum/", "forum"],
+      library: ["https://barnahus.eu/library/", "elpis"],
+      policy: ["https://barnahus.eu/policy/", "policy"],
+      member: ["https://barnahus.eu/members/", "member-spotlight"]
+    };
+
+    function slugify(value) {
+      return value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function buildTrackedUrl() {
+      statusOutput.textContent = "";
+
+      try {
+        const url = new URL(destinationInput.value.trim());
+        const campaign = slugify(campaignInput.value);
+        const content = slugify(customContentInput.value || contentSelect.value);
+
+        Array.from(url.searchParams.keys()).forEach((key) => {
+          if (key.toLowerCase().startsWith("utm_")) {
+            url.searchParams.delete(key);
+          }
+        });
+
+        if (!campaign || !content) {
+          resultOutput.value = "";
+          return;
+        }
+
+        url.searchParams.set("utm_source", "newsletter");
+        url.searchParams.set("utm_medium", "email");
+        url.searchParams.set("utm_campaign", campaign);
+        url.searchParams.set("utm_content", content);
+        resultOutput.value = url.toString();
+      } catch (error) {
+        resultOutput.value = "";
+        statusOutput.textContent = "Enter a full URL, including https://";
+      }
+    }
+
+    function setPreset(name) {
+      const preset = presets[name];
+
+      destinationInput.value = preset[0];
+      contentSelect.value = preset[1];
+      customContentInput.value = "";
+      buildTrackedUrl();
+    }
+
+    [destinationInput, campaignInput, contentSelect, customContentInput].forEach((input) => {
+      input.addEventListener("input", buildTrackedUrl);
+      input.addEventListener("change", buildTrackedUrl);
+    });
+
+    Object.keys(presets).forEach((name) => {
+      document.querySelector(`#${name}`).addEventListener("click", () => setPreset(name));
+    });
+
+    document.querySelector("#copy").addEventListener("click", async () => {
+      if (!resultOutput.value) {
+        buildTrackedUrl();
+      }
+
+      if (!resultOutput.value) {
+        return;
+      }
+
+      await navigator.clipboard.writeText(resultOutput.value);
+      statusOutput.textContent = "Copied.";
+    });
+
+    buildTrackedUrl();
+  </script>
+</body>
+</html>
