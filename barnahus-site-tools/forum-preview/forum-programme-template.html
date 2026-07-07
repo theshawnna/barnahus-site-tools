@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Barnahus Forum 2026 Programme</title>
+  <script async src="https://js.stripe.com/v3/buy-button.js"></script>
   <style>
     :root {
       --ink: #110b10;
@@ -500,6 +501,97 @@
       text-decoration: underline;
       text-decoration-thickness: 1px;
       text-underline-offset: 3px;
+    }
+
+    .notebook-extra {
+      background: rgba(255, 255, 255, .72);
+      border: 1px solid var(--line);
+      border-left: 3px solid rgba(162, 59, 37, .34);
+      border-radius: var(--radius);
+      margin-top: 12px;
+      overflow: hidden;
+    }
+
+    .notebook-extra summary {
+      align-items: center;
+      cursor: pointer;
+      display: grid;
+      gap: 8px 14px;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      list-style: none;
+      padding: 12px 14px;
+    }
+
+    .notebook-extra summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .notebook-kicker {
+      color: var(--brick);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .notebook-title {
+      color: var(--heading);
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .notebook-summary-text {
+      color: var(--muted);
+      font-size: 13px;
+      grid-column: 2 / 3;
+      line-height: 1.35;
+    }
+
+    .notebook-cta {
+      align-items: center;
+      background: var(--soft-blue);
+      border: 1px solid rgba(96, 108, 165, .3);
+      border-radius: 999px;
+      color: var(--blue);
+      display: inline-flex;
+      font-size: 13px;
+      font-weight: 850;
+      justify-content: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      white-space: nowrap;
+    }
+
+    .notebook-cta-open {
+      display: none;
+    }
+
+    .notebook-extra[open] .notebook-cta-closed {
+      display: none;
+    }
+
+    .notebook-extra[open] .notebook-cta-open {
+      display: inline;
+    }
+
+    .notebook-extra-buy {
+      align-content: center;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+      padding: 12px 14px 14px;
+    }
+
+    .notebook-extra-buy stripe-buy-button {
+      width: 100%;
+    }
+
+    .notebook-note {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      margin: 0;
     }
 
     .saved-group {
@@ -1521,6 +1613,23 @@
         grid-template-columns: 1fr;
       }
 
+      .notebook-extra {
+        margin-top: 10px;
+      }
+
+      .notebook-extra summary {
+        grid-template-columns: 1fr auto;
+      }
+
+      .notebook-kicker,
+      .notebook-summary-text {
+        grid-column: 1 / -1;
+      }
+
+      .notebook-extra-buy {
+        grid-template-columns: 1fr;
+      }
+
       .exchange-grid {
         grid-template-columns: 1fr;
       }
@@ -1573,6 +1682,7 @@
       </div>
       <nav class="quick-nav" aria-label="Quick navigation">
         <button class="pill active" data-jump="programme">Programme</button>
+        <a class="pill" href="/forum/participants">Participants</a>
         <button class="pill" data-jump="practical">Practical</button>
         <button class="pill" id="savedFilter" data-filter-saved aria-pressed="false">Saved</button>
       </nav>
@@ -1835,22 +1945,37 @@
         </div>
       </div>
       <div class="practical-grid">
+        <button class="info-tile" data-session="support">
+          <h3>Preventing secondary traumatisation</h3>
+          <p>Help us create an environment that is both safe and constructive for all participants.</p>
+          <span class="card-foot">Read more</span>
+        </button>
         <button class="info-tile" data-session="safeguarding">
           <h3>Safeguarding</h3>
-          <p>Please follow the Network safeguarding guidance and keep any case information confidential.</p>
+          <p>Guidelines for ensuring children who participate at our events are not harmed.</p>
           <span class="card-foot">Read more</span>
         </button>
         <button class="info-tile" data-session="photography">
           <h3>Photography</h3>
-          <p>Photos and video may be taken by organisers. Do not photograph children or case material.</p>
-          <span class="card-foot">Read more</span>
-        </button>
-        <button class="info-tile" data-session="support">
-          <h3>Support</h3>
-          <p>If a session raises concerns or you need support, speak with the organising team at the registration desk.</p>
+          <p>Guidance on respectful photography, recording and use of images during the Forum.</p>
           <span class="card-foot">Read more</span>
         </button>
       </div>
+      <details class="notebook-extra">
+        <summary>
+          <span class="notebook-kicker">Optional extra</span>
+          <span class="notebook-title">Barnahus Network notebook</span>
+          <span class="notebook-summary-text">Pre-order a branded notebook for collection at the Forum registration desk. The first batch is priced just above cost.</span>
+          <span class="notebook-cta" aria-hidden="true"><span class="notebook-cta-closed">Pre-order</span><span class="notebook-cta-open">Hide</span></span>
+        </summary>
+        <div class="notebook-extra-buy">
+          <stripe-buy-button
+            buy-button-id="buy_btn_1TqeYd53F10x7fDLQJZwGF4m"
+            publishable-key="pk_live_51TUk6p53F10x7fDLxCqYIZkSH8T6trtvKxQ6BMX9WeBHEAc6Ic0mLgZ9BNi8O2hNcPzXXnqo6HnlNqSWkzHpqM4Q00Hne4lJNA">
+          </stripe-buy-button>
+          <p class="notebook-note">Payment is handled securely by Stripe. The notebook is for collection at the Forum only. Attention: shipping not available.</p>
+        </div>
+      </details>
     </section>
 
     <section class="section" id="saved">
@@ -2432,7 +2557,7 @@
       }
     };
 
-    const practicalItems = ["safeguarding", "photography", "support"];
+    const practicalItems = ["support", "safeguarding", "photography"];
 
     const detail = document.getElementById("detail");
     const mobileDetail = document.getElementById("mobileDetail");
