@@ -528,42 +528,45 @@
 
     .notebook-preview {
       align-self: stretch;
+      appearance: none;
+      background: #fff;
+      border: 0;
+      border-radius: 5px;
+      box-shadow: 0 8px 18px rgba(54, 52, 87, .14);
+      cursor: zoom-in;
+      display: block;
+      height: 64px;
       min-height: 58px;
+      overflow: hidden;
+      padding: 0;
       position: relative;
       width: 72px;
     }
 
-    .notebook-page,
-    .notebook-cover {
-      border-radius: 3px;
+    .notebook-preview img {
+      display: block;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 34%;
+      width: 100%;
+    }
+
+    .notebook-preview::after {
+      align-items: center;
+      background: rgba(255, 255, 255, .9);
+      border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(54, 52, 87, .16);
+      color: var(--blue);
+      content: "+";
+      display: flex;
+      font-size: 18px;
+      font-weight: 800;
+      height: 22px;
+      justify-content: center;
       position: absolute;
-    }
-
-    .notebook-page {
-      background-color: #fff;
-      background-image: radial-gradient(rgba(96, 108, 165, .38) 1px, transparent 1px);
-      background-size: 8px 8px;
-      border: 1px solid rgba(217, 212, 207, .94);
-      inset: 4px 2px 2px 22px;
-    }
-
-    .notebook-cover {
-      background: linear-gradient(145deg, var(--blue), var(--violet));
-      border: 1px solid rgba(54, 52, 87, .24);
-      box-shadow: 0 8px 18px rgba(54, 52, 87, .16);
-      color: #fff;
-      display: grid;
-      inset: 0 18px 6px 0;
-      padding: 8px;
-      place-content: end start;
-    }
-
-    .notebook-cover span {
-      font-size: 8px;
-      font-weight: 850;
-      letter-spacing: .05em;
-      line-height: 1.15;
-      text-transform: uppercase;
+      right: 5px;
+      top: 5px;
+      width: 22px;
     }
 
     .notebook-title {
@@ -625,6 +628,121 @@
       font-weight: 700;
       line-height: 1.35;
       margin: 0;
+    }
+
+    .notebook-info {
+      align-content: center;
+      display: grid;
+      gap: 10px;
+    }
+
+    .notebook-dotgrid-sample {
+      align-items: center;
+      border: 1px solid rgba(217, 212, 207, .9);
+      border-radius: 6px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 82px minmax(0, 1fr);
+      padding: 8px;
+    }
+
+    .notebook-dotgrid-sample img {
+      border-radius: 4px;
+      display: block;
+      height: 68px;
+      object-fit: cover;
+      width: 82px;
+    }
+
+    .notebook-dotgrid-sample span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.3;
+    }
+
+    .notebook-dialog {
+      background: transparent;
+      border: 0;
+      max-width: min(900px, calc(100vw - 32px));
+      padding: 0;
+      width: 100%;
+    }
+
+    .notebook-dialog::backdrop {
+      background: rgba(33, 31, 46, .54);
+    }
+
+    .notebook-dialog-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(33, 31, 46, .28);
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(260px, 1fr) minmax(220px, .72fr);
+      padding: 18px;
+      position: relative;
+    }
+
+    .notebook-dialog-media {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) 132px;
+    }
+
+    .notebook-dialog-media img {
+      border-radius: 6px;
+      display: block;
+      height: min(66vh, 640px);
+      object-fit: cover;
+      width: 100%;
+    }
+
+    .notebook-dialog-media img:first-child {
+      object-position: 50% 38%;
+    }
+
+    .notebook-dialog-media img:last-child {
+      height: min(66vh, 640px);
+      object-position: 50% 50%;
+    }
+
+    .notebook-dialog-copy {
+      align-content: center;
+      display: grid;
+      gap: 8px;
+      padding-right: 34px;
+    }
+
+    .notebook-dialog-copy h2 {
+      color: var(--heading);
+      font-family: var(--font-body);
+      font-size: clamp(24px, 3vw, 34px);
+      letter-spacing: 0;
+      line-height: 1.05;
+      margin: 0;
+    }
+
+    .notebook-dialog-copy p {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .notebook-dialog-close {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--heading);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 850;
+      padding: 8px 12px;
+      position: absolute;
+      right: 14px;
+      top: 14px;
     }
 
     .saved-group {
@@ -1667,6 +1785,26 @@
         grid-template-columns: 1fr;
       }
 
+      .notebook-dialog-card,
+      .notebook-dialog-media {
+        grid-template-columns: 1fr;
+      }
+
+      .notebook-dialog-card {
+        max-height: calc(100vh - 32px);
+        overflow: auto;
+      }
+
+      .notebook-dialog-copy {
+        padding-right: 0;
+      }
+
+      .notebook-dialog-media img,
+      .notebook-dialog-media img:last-child {
+        height: auto;
+        max-height: none;
+      }
+
       .exchange-grid {
         grid-template-columns: 1fr;
       }
@@ -2000,10 +2138,9 @@
       </div>
       <details class="notebook-extra">
         <summary>
-          <span class="notebook-preview" aria-hidden="true">
-            <span class="notebook-page"></span>
-            <span class="notebook-cover"><span>Barnahus Network</span></span>
-          </span>
+          <button class="notebook-preview" type="button" data-notebook-preview aria-label="View a larger photo of the Barnahus Network notebook">
+            <img src="notebook-assets/forum-notebook-cover.jpg" alt="">
+          </button>
           <span class="notebook-title">Barnahus Network dot-grid notebook</span>
           <span class="notebook-summary-text">Pre-order a branded dot-grid notebook. Collect it at the Forum. (Attention: shipping is not available.)</span>
           <span class="notebook-cta" aria-hidden="true"><span class="notebook-cta-closed">Pre-order</span><span class="notebook-cta-open">Hide</span></span>
@@ -2013,7 +2150,13 @@
             buy-button-id="buy_btn_1TqeYd53F10x7fDLQJZwGF4m"
             publishable-key="pk_live_51TUk6p53F10x7fDLxCqYIZkSH8T6trtvKxQ6BMX9WeBHEAc6Ic0mLgZ9BNi8O2hNcPzXXnqo6HnlNqSWkzHpqM4Q00Hne4lJNA">
           </stripe-buy-button>
-          <p class="notebook-note">Payment is handled securely by Stripe. The notebook is for collection at the Forum only. Attention: shipping not available.</p>
+          <div class="notebook-info">
+            <p class="notebook-note">Payment is handled securely by Stripe. The notebook is for collection at the Forum only. Attention: shipping not available.</p>
+            <div class="notebook-dotgrid-sample">
+              <img src="notebook-assets/forum-notebook-dotgrid.jpg" alt="">
+              <span>Dot-grid paper for notes, sketches and planning.</span>
+            </div>
+          </div>
         </div>
       </details>
     </section>
@@ -2054,6 +2197,19 @@
     </div>
     <div id="mobileDetail" class="detail-inner"></div>
   </aside>
+  <dialog class="notebook-dialog" id="notebookDialog" aria-labelledby="notebookDialogTitle">
+    <div class="notebook-dialog-card">
+      <button class="notebook-dialog-close" type="button" data-close-notebook-preview>Close</button>
+      <div class="notebook-dialog-media">
+        <img src="notebook-assets/forum-notebook-cover.jpg" alt="Yellow Barnahus Network notebook cover">
+        <img src="notebook-assets/forum-notebook-dotgrid.jpg" alt="Close-up of the notebook dot-grid paper">
+      </div>
+      <div class="notebook-dialog-copy">
+        <h2 id="notebookDialogTitle">Barnahus Network dot-grid notebook</h2>
+        <p>Branded cover with dot-grid paper for notes, sketches and planning. Collection at the Forum only.</p>
+      </div>
+    </div>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -2619,6 +2775,7 @@
     const nextPracticalButton = document.getElementById("nextPractical");
     const sheetBackdrop = document.getElementById("sheetBackdrop");
     const closeSheetButton = document.getElementById("closeSheet");
+    const notebookDialog = document.getElementById("notebookDialog");
     const savedList = document.getElementById("savedList");
     const sharePreview = document.getElementById("sharePreview");
     const toast = document.getElementById("toast");
@@ -3215,6 +3372,14 @@
     }
 
     document.addEventListener("click", event => {
+      const notebookPreview = event.target.closest("[data-notebook-preview]");
+      if (notebookPreview) {
+        event.preventDefault();
+        event.stopPropagation();
+        notebookDialog?.showModal?.();
+        return;
+      }
+
       const exchangeCard = event.target.closest("[data-exchange]");
       if (exchangeCard) {
         const id = exchangeCard.dataset.exchange;
@@ -3380,6 +3545,7 @@
 
     closeSheetButton.addEventListener("click", closeSheet);
     sheetBackdrop.addEventListener("click", closeSheet);
+    document.querySelector("[data-close-notebook-preview]")?.addEventListener("click", () => notebookDialog?.close());
     document.addEventListener("keydown", event => {
       if (event.key === "Escape" && sheet.classList.contains("open")) closeSheet();
     });
