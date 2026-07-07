@@ -517,20 +517,13 @@
       cursor: pointer;
       display: grid;
       gap: 8px 14px;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       list-style: none;
       padding: 12px 14px;
     }
 
     .notebook-extra summary::-webkit-details-marker {
       display: none;
-    }
-
-    .notebook-kicker {
-      color: var(--brick);
-      font-size: 12px;
-      font-weight: 850;
-      text-transform: uppercase;
     }
 
     .notebook-title {
@@ -542,7 +535,7 @@
     .notebook-summary-text {
       color: var(--muted);
       font-size: 13px;
-      grid-column: 2 / 3;
+      grid-column: 1 / 2;
       line-height: 1.35;
     }
 
@@ -1621,7 +1614,6 @@
         grid-template-columns: 1fr auto;
       }
 
-      .notebook-kicker,
       .notebook-summary-text {
         grid-column: 1 / -1;
       }
@@ -1963,9 +1955,8 @@
       </div>
       <details class="notebook-extra">
         <summary>
-          <span class="notebook-kicker">Optional extra</span>
           <span class="notebook-title">Barnahus Network notebook</span>
-          <span class="notebook-summary-text">Pre-order a branded notebook for collection at the Forum registration desk. The first batch is priced just above cost.</span>
+          <span class="notebook-summary-text">Pre-order a branded notebook. Collect it at the Forum. (Attention: shipping is not available.)</span>
           <span class="notebook-cta" aria-hidden="true"><span class="notebook-cta-closed">Pre-order</span><span class="notebook-cta-open">Hide</span></span>
         </summary>
         <div class="notebook-extra-buy">
