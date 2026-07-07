@@ -517,13 +517,53 @@
       cursor: pointer;
       display: grid;
       gap: 8px 14px;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
       list-style: none;
       padding: 12px 14px;
     }
 
     .notebook-extra summary::-webkit-details-marker {
       display: none;
+    }
+
+    .notebook-preview {
+      align-self: stretch;
+      min-height: 58px;
+      position: relative;
+      width: 72px;
+    }
+
+    .notebook-page,
+    .notebook-cover {
+      border-radius: 3px;
+      position: absolute;
+    }
+
+    .notebook-page {
+      background-color: #fff;
+      background-image: radial-gradient(rgba(96, 108, 165, .38) 1px, transparent 1px);
+      background-size: 8px 8px;
+      border: 1px solid rgba(217, 212, 207, .94);
+      inset: 4px 2px 2px 22px;
+    }
+
+    .notebook-cover {
+      background: linear-gradient(145deg, var(--blue), var(--violet));
+      border: 1px solid rgba(54, 52, 87, .24);
+      box-shadow: 0 8px 18px rgba(54, 52, 87, .16);
+      color: #fff;
+      display: grid;
+      inset: 0 18px 6px 0;
+      padding: 8px;
+      place-content: end start;
+    }
+
+    .notebook-cover span {
+      font-size: 8px;
+      font-weight: 850;
+      letter-spacing: .05em;
+      line-height: 1.15;
+      text-transform: uppercase;
     }
 
     .notebook-title {
@@ -535,7 +575,7 @@
     .notebook-summary-text {
       color: var(--muted);
       font-size: 13px;
-      grid-column: 1 / 2;
+      grid-column: 2 / 3;
       line-height: 1.35;
     }
 
@@ -981,6 +1021,7 @@
     .detail-title {
       margin: 0;
       color: var(--heading);
+      font-family: var(--font-body);
       font-size: 26px;
       line-height: 1.12;
     }
@@ -1073,7 +1114,7 @@
     .detail-panel p,
     .detail-panel li {
       color: var(--ink);
-      font-family: var(--font-body);
+      font-family: var(--font-heading);
       font-size: 16px;
     }
 
@@ -1611,11 +1652,15 @@
       }
 
       .notebook-extra summary {
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 62px minmax(0, 1fr) auto;
       }
 
       .notebook-summary-text {
-        grid-column: 1 / -1;
+        grid-column: 2 / -1;
+      }
+
+      .notebook-preview {
+        width: 62px;
       }
 
       .notebook-extra-buy {
@@ -1955,8 +2000,12 @@
       </div>
       <details class="notebook-extra">
         <summary>
-          <span class="notebook-title">Barnahus Network notebook</span>
-          <span class="notebook-summary-text">Pre-order a branded notebook. Collect it at the Forum. (Attention: shipping is not available.)</span>
+          <span class="notebook-preview" aria-hidden="true">
+            <span class="notebook-page"></span>
+            <span class="notebook-cover"><span>Barnahus Network</span></span>
+          </span>
+          <span class="notebook-title">Barnahus Network dot-grid notebook</span>
+          <span class="notebook-summary-text">Pre-order a branded dot-grid notebook. Collect it at the Forum. (Attention: shipping is not available.)</span>
           <span class="notebook-cta" aria-hidden="true"><span class="notebook-cta-closed">Pre-order</span><span class="notebook-cta-open">Hide</span></span>
         </summary>
         <div class="notebook-extra-buy">
