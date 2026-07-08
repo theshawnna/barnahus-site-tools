@@ -517,7 +517,7 @@
       cursor: pointer;
       display: grid;
       gap: 8px 14px;
-      grid-template-columns: 72px minmax(0, 1fr) auto;
+      grid-template-columns: 88px minmax(0, 1fr) auto;
       list-style: none;
       padding: 12px 14px;
     }
@@ -529,21 +529,41 @@
     .notebook-preview {
       align-self: stretch;
       appearance: none;
-      background: #fff;
+      background: transparent;
       border: 0;
-      border-radius: 5px;
-      box-shadow: 0 8px 18px rgba(54, 52, 87, .14);
       cursor: zoom-in;
       display: block;
-      height: 64px;
+      height: 72px;
       min-height: 58px;
-      overflow: hidden;
+      overflow: visible;
       padding: 0;
       position: relative;
-      width: 72px;
+      width: 88px;
     }
 
-    .notebook-preview img {
+    .notebook-preview-page {
+      background-color: #fffef9;
+      background-image: radial-gradient(rgba(96, 108, 165, .58) 1.05px, transparent 1.05px);
+      background-size: 8px 8px;
+      border: 1px solid rgba(217, 212, 207, .94);
+      border-radius: 4px;
+      box-shadow: 0 8px 18px rgba(54, 52, 87, .08);
+      inset: 8px 0 2px 30px;
+      position: absolute;
+    }
+
+    .notebook-preview-cover {
+      background: #f4b63e;
+      border: 1px solid rgba(54, 52, 87, .18);
+      border-radius: 5px;
+      box-shadow: 0 10px 22px rgba(54, 52, 87, .18);
+      display: block;
+      inset: 0 26px 8px 0;
+      overflow: hidden;
+      position: absolute;
+    }
+
+    .notebook-preview-cover img {
       display: block;
       height: 100%;
       object-fit: cover;
@@ -564,9 +584,10 @@
       height: 22px;
       justify-content: center;
       position: absolute;
-      right: 5px;
-      top: 5px;
+      right: 7px;
+      top: 2px;
       width: 22px;
+      z-index: 2;
     }
 
     .notebook-preview:focus,
@@ -1792,7 +1813,7 @@
       }
 
       .notebook-extra summary {
-        grid-template-columns: 62px minmax(0, 1fr) auto;
+        grid-template-columns: 78px minmax(0, 1fr) auto;
       }
 
       .notebook-summary-text {
@@ -1800,7 +1821,8 @@
       }
 
       .notebook-preview {
-        width: 62px;
+        height: 64px;
+        width: 78px;
       }
 
       .notebook-extra-buy {
@@ -2164,7 +2186,10 @@
       <details class="notebook-extra">
         <summary>
           <button class="notebook-preview" type="button" data-notebook-preview aria-label="View a larger photo of the Barnahus Network notebook">
-            <img src="notebook-assets/forum-notebook-cover.jpg" alt="">
+            <span class="notebook-preview-page" aria-hidden="true"></span>
+            <span class="notebook-preview-cover" aria-hidden="true">
+              <img src="notebook-assets/forum-notebook-cover.jpg" alt="">
+            </span>
           </button>
           <span class="notebook-title">Barnahus Network dot-grid notebook</span>
           <span class="notebook-summary-text">Pre-order a branded dot-grid notebook. Collect it at the Forum. (Attention: shipping is not available.)</span>
