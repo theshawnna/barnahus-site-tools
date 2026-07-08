@@ -516,7 +516,10 @@
       align-items: center;
       cursor: pointer;
       display: grid;
-      gap: 8px 14px;
+      gap: 2px 14px;
+      grid-template-areas:
+        "preview title cta"
+        "preview summary cta";
       grid-template-columns: 88px minmax(0, 1fr) auto;
       list-style: none;
       padding: 12px 14px;
@@ -533,6 +536,7 @@
       border: 0;
       cursor: zoom-in;
       display: block;
+      grid-area: preview;
       height: 72px;
       min-height: 58px;
       overflow: visible;
@@ -605,13 +609,17 @@
       color: var(--heading);
       font-size: 15px;
       font-weight: 850;
+      grid-area: title;
+      line-height: 1.2;
+      margin-top: 6px;
     }
 
     .notebook-summary-text {
       color: var(--muted);
       font-size: 13px;
-      grid-column: 2 / 3;
+      grid-area: summary;
       line-height: 1.35;
+      margin-bottom: 6px;
     }
 
     .notebook-cta {
@@ -623,6 +631,7 @@
       display: inline-flex;
       font-size: 13px;
       font-weight: 850;
+      grid-area: cta;
       justify-content: center;
       min-height: 34px;
       padding: 7px 12px;
@@ -1813,11 +1822,10 @@
       }
 
       .notebook-extra summary {
+        grid-template-areas:
+          "preview title cta"
+          "preview summary summary";
         grid-template-columns: 78px minmax(0, 1fr) auto;
-      }
-
-      .notebook-summary-text {
-        grid-column: 2 / -1;
       }
 
       .notebook-preview {
@@ -2826,6 +2834,9 @@
     const sheetBackdrop = document.getElementById("sheetBackdrop");
     const closeSheetButton = document.getElementById("closeSheet");
     const notebookDialog = document.getElementById("notebookDialog");
+    const notebookExtra = document.querySelector(".notebook-extra");
+    const notebookSummaryText = document.querySelector(".notebook-summary-text");
+    const notebookClosedCta = document.querySelector(".notebook-cta-closed");
     const savedList = document.getElementById("savedList");
     const sharePreview = document.getElementById("sharePreview");
     const toast = document.getElementById("toast");
@@ -3012,6 +3023,23 @@
       return getCurrentProgrammeState().bingoVisible;
     }
 
+    function updateNotebookOffer(state) {
+      if (!notebookExtra) return;
+      const isAfterForum = state.bodyClass === "state-after-event";
+      const isForumDay = state.bodyClass === "state-live";
+      notebookExtra.hidden = isAfterForum;
+      if (isAfterForum) {
+        notebookExtra.open = false;
+        return;
+      }
+      if (notebookSummaryText) {
+        notebookSummaryText.textContent = isForumDay
+          ? "Buy a branded dot-grid notebook. Collect it at the Forum. (Attention: shipping is not available.)"
+          : "Pre-order a branded dot-grid notebook. Collect it at the Forum. (Attention: shipping is not available.)";
+      }
+      if (notebookClosedCta) notebookClosedCta.textContent = isForumDay ? "Buy" : "Pre-order";
+    }
+
     function setShortcutTarget(element, target) {
       if (!element) return;
       element.dataset.primaryTarget = target || "";
@@ -3046,6 +3074,7 @@
       nextLabel.textContent = state.nextLabel;
       nextTitle.textContent = state.nextTitle;
       nextMeta.textContent = state.nextMeta;
+      updateNotebookOffer(state);
       primaryProgrammeAction.textContent = state.primaryAction;
       setShortcutTarget(primaryProgrammeAction, state.primaryTarget);
       setShortcutTarget(nextTile, state.nextTarget);
