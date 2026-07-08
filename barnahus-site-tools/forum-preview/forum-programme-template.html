@@ -569,6 +569,17 @@
       width: 22px;
     }
 
+    .notebook-preview:focus,
+    .notebook-dotgrid-sample:focus {
+      outline: 0;
+    }
+
+    .notebook-preview:focus-visible,
+    .notebook-dotgrid-sample:focus-visible {
+      outline: 3px solid rgba(96, 108, 165, .22);
+      outline-offset: 3px;
+    }
+
     .notebook-title {
       color: var(--heading);
       font-size: 15px;
@@ -638,19 +649,26 @@
 
     .notebook-dotgrid-sample {
       align-items: center;
+      appearance: none;
+      background: #fff;
       border: 1px solid rgba(217, 212, 207, .9);
       border-radius: 6px;
+      color: inherit;
+      cursor: zoom-in;
       display: grid;
       gap: 10px;
       grid-template-columns: 82px minmax(0, 1fr);
       padding: 8px;
+      text-align: left;
+      width: 100%;
     }
 
-    .notebook-dotgrid-sample img {
+    .notebook-dotgrid-art {
+      background-color: #fffef9;
+      background-image: radial-gradient(rgba(96, 108, 165, .54) 1.15px, transparent 1.15px);
+      background-size: 10px 10px;
       border-radius: 4px;
-      display: block;
       height: 68px;
-      object-fit: cover;
       width: 82px;
     }
 
@@ -702,9 +720,13 @@
       object-position: 50% 38%;
     }
 
-    .notebook-dialog-media img:last-child {
-      height: min(66vh, 640px);
-      object-position: 50% 50%;
+    .notebook-dialog-dotgrid {
+      background-color: #fffef9;
+      background-image: radial-gradient(rgba(96, 108, 165, .62) 1.4px, transparent 1.4px);
+      background-size: 16px 16px;
+      border: 1px solid rgba(217, 212, 207, .9);
+      border-radius: 6px;
+      min-height: min(66vh, 640px);
     }
 
     .notebook-dialog-copy {
@@ -1799,10 +1821,13 @@
         padding-right: 0;
       }
 
-      .notebook-dialog-media img,
-      .notebook-dialog-media img:last-child {
+      .notebook-dialog-media img {
         height: auto;
         max-height: none;
+      }
+
+      .notebook-dialog-dotgrid {
+        min-height: 220px;
       }
 
       .exchange-grid {
@@ -2152,10 +2177,10 @@
           </stripe-buy-button>
           <div class="notebook-info">
             <p class="notebook-note">Payment is handled securely by Stripe. The notebook is for collection at the Forum only. Attention: shipping not available.</p>
-            <div class="notebook-dotgrid-sample">
-              <img src="notebook-assets/forum-notebook-dotgrid.jpg" alt="">
+            <button class="notebook-dotgrid-sample" type="button" data-notebook-preview aria-label="View the notebook dot-grid paper sample">
+              <span class="notebook-dotgrid-art" aria-hidden="true"></span>
               <span>Dot-grid paper for notes, sketches and planning.</span>
-            </div>
+            </button>
           </div>
         </div>
       </details>
@@ -2202,7 +2227,7 @@
       <button class="notebook-dialog-close" type="button" data-close-notebook-preview>Close</button>
       <div class="notebook-dialog-media">
         <img src="notebook-assets/forum-notebook-cover.jpg" alt="Yellow Barnahus Network notebook cover">
-        <img src="notebook-assets/forum-notebook-dotgrid.jpg" alt="Close-up of the notebook dot-grid paper">
+        <div class="notebook-dialog-dotgrid" role="img" aria-label="Graphic sample of the notebook dot-grid paper"></div>
       </div>
       <div class="notebook-dialog-copy">
         <h2 id="notebookDialogTitle">Barnahus Network dot-grid notebook</h2>
