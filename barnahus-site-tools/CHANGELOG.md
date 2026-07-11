@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 1.3.0 - 2026-07-11
+
+- Add the production Forum programme and participant routes with notebook and pathway assets.
+- Require separate route and content-approval controls under Settings before Forum content is public.
+- Prevent direct access to Forum templates, and add no-index and content-type protections to routed content.
+- Restrict preview-state controls to signed-in editors and keep public shared links independent of preview state.
+- Lazy-load Stripe only after a participant opens the notebook payment controls.
+- Improve keyboard focus, focus trapping, body scroll locking, and accessible labels in the mobile session sheet and pathway viewer.
+- Restore a proper accessible `h1` to the `/events` page without duplicating its visible theme title.
+- Preserve unrelated editorial tags and categories when event series or event categories are updated, and include taxonomy data in event snapshots.
+- Load featured-post styles only when the shortcode is rendered, remove both queued and raw Buy Me a Coffee embeds from disallowed pages, and stop indefinite polling.
+- Build deterministic release archives directly from committed source.
+- Keep Barnahus Quality Standards publishing source in the separate `barnahus-publishing` project and out of this plug-in.
+- Back up the live plug-in before exact FTP mirroring so obsolete public files are removed without losing rollback coverage.
+- Add regression checks for taxonomy preservation, preview gating, direct-template safety, local path leaks, PHP, and shell syntax.
+
+## 1.2.4
+
 - Add manual Barnahus Events admin area and `[barnahus_events]` shortcode.
 - Add public Barnahus event detail pages with optional Luma embed support.
 - Update event cards to use "Read more" links, translucent card styling, and double-width featured cards.

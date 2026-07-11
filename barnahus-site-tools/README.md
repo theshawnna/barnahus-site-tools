@@ -1,8 +1,6 @@
-Hi Thord. I built these things because buy me a coffee has a bit annoying behaviour and color, and I wanted a cleaner in-site page embed. I broke the page briefly by having an extra PHP marker at the top of one of the files. It's all OK now. Cheers, s
+# Barnahus site tools
 
-# Barnahus Site Tools
-
-Version: 1.2.4
+Version: 1.3.0
 
 A custom WordPress plugin containing functionality specific to the Barnahus Network website (https://barnahus.eu).
 
@@ -12,7 +10,7 @@ The purpose of this plugin is to keep Barnahus-specific functionality separate f
 
 ## Current features
 
-### Featured Post shortcode
+### Featured post shortcode
 
 Displays a selected post or page as a featured content card.
 
@@ -43,15 +41,14 @@ Supported heading levels:
 
 Customisations include:
 
-- Restrict widget to selected pages
-- Custom button colour
-- PT Serif typography
-- Smaller popup text
-- Hide widget on all other pages
+- Restrict the widget to selected pages
+- Use the Barnahus button colour and typography
+- Hide and, where WordPress registered it, unload the widget on all other pages
+- Stop the fallback observer after ten seconds instead of polling indefinitely
 
 ---
 
-### Barnahus Events
+### Barnahus events
 
 Adds a Barnahus Events admin area for curated public event cards. Event pages are regular WordPress posts tagged `event`, so they can be found and edited through the normal Posts workflow.
 
@@ -70,7 +67,7 @@ The **Event Dashboard** screen under Barnahus Events lets editors manage public 
 - Registration URL
 - Manual card URL
 
-Planned cards can be published with no date and no card link, which is useful for forthcoming events where the details are not ready yet. New planned cards and Luma imports are created as normal posts with the `event` tag. Event Series are stored as regular post tags alongside `event`.
+Planned cards can be published with no date and no card link, which is useful for forthcoming events where the details are not ready yet. New planned cards and Luma imports are created as normal posts with the `event` tag. Event series are stored as regular post tags alongside `event`. Event updates preserve unrelated editorial tags and categories.
 
 Shortcode:
 
@@ -175,7 +172,27 @@ Featured events appear first, then all other upcoming events. Events are sorted 
 
 ---
 
-### Newsletter Link Tracking
+### Forum programme and participants
+
+Provides the production Forum companion pages at:
+
+```text
+/forum/programme
+/forum/participants
+```
+
+The programme includes personal session saving, shareable links, calendar export, print support, practical information, and an on-demand Stripe notebook payment button. The participant page includes searchable highlights and an accessible pathway viewer.
+
+The routes and their allow-listed assets are unavailable until an administrator selects both controls under **Settings > Barnahus site tools**:
+
+- Publish the programme and participant routes
+- Confirm that the current programme and participant information is approved for publication
+
+Editors can add `?preview=1` to the programme URL to reveal the before, Forum day, and after-state preview controls. Public shared links cannot force a preview state.
+
+---
+
+### Newsletter link tracking
 
 Adds a helper for creating Matomo-friendly newsletter links before sending through Brevo.
 
@@ -238,6 +255,12 @@ https://barnahus.eu/members/?utm_source=newsletter&utm_medium=email&utm_campaign
 
 ---
 
+### Barnahus Quality Standards publishing
+
+The publishing application and its generated review files belong in the sibling `barnahus-publishing` project. They are not copied into or deployed with this plug-in.
+
+---
+
 ## Folder structure
 
 ```
@@ -247,15 +270,23 @@ barnahus-site-tools/
 ├── README.md
 ├── CHANGELOG.md
 
+├── forum-preview/
+│   ├── forum-programme-template.php
+│   ├── forum-participants-template.php
+│   ├── notebook-assets/
+│   └── pathway-assets/
+
 ├── css/
 │   ├── events.css
 │   └── featured-post.css
 
 └── includes/
     ├── events.php
+    ├── forum-preview.php
     ├── init.php
     ├── helpers.php
     ├── featured-post.php
+    ├── settings.php
     └── bmc.php
 ```
 

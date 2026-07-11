@@ -1,107 +1,173 @@
 <?php
 
-// Show Buy Me a Coffee only on selected pages.
-\add_action('wp_footer', function () {
-	?>
-	<script>
-	(function () {
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-		const allowedBmcPages = [
-			'/about/who-we-are/',
-			'/about/vision/',
-			'/category/news/',
-			'/about/milestones/',
-			'/about/contact-us/',
-			'/barnahus/about-barnahus/',
-			'/barnahus/the-setup-of-barnahus/where-to-start/',
-			'/barnahus/the-practice-in-barnahus/standards/',
-			'/barnahus/the-practice-in-barnahus/the-multidisciplinary-team/',
-			'/barnahus/the-practice-in-barnahus/progress-in-europe/',
-			'/membership/current-members/',
-			'/library/'
-		];
+function barnahus_bmc_allowed_paths() {
+    return array(
+        '/about/who-we-are/',
+        '/about/vision/',
+        '/category/news/',
+        '/about/milestones/',
+        '/about/contact-us/',
+        '/barnahus/about-barnahus/',
+        '/barnahus/the-setup-of-barnahus/where-to-start/',
+        '/barnahus/the-practice-in-barnahus/standards/',
+        '/barnahus/the-practice-in-barnahus/the-multidisciplinary-team/',
+        '/barnahus/the-practice-in-barnahus/progress-in-europe/',
+        '/membership/current-members/',
+        '/library/',
+    );
+}
 
-		const currentPath = window.location.pathname.replace(/\/+$/, '/') || '/';
+function barnahus_bmc_current_path() {
+    $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '/';
+    $path = wp_parse_url($request_uri, PHP_URL_PATH);
 
-		function hideBmc() {
-			document.querySelectorAll(
-				'#bmc-wbtn, #bmc-iframe, #bmc-wbtn + div, #WidgetFloaterPanels'
-			).forEach(function (el) {
-				el.style.setProperty('display', 'none', 'important');
-				el.style.setProperty('visibility', 'hidden', 'important');
-				el.style.setProperty('opacity', '0', 'important');
-				el.style.setProperty('pointer-events', 'none', 'important');
-			});
-		}
+    if (!is_string($path) || '' === $path) {
+        return '/';
+    }
 
-		function controlBmc() {
-			if (!allowedBmcPages.includes(currentPath)) {
-				hideBmc();
-			}
-		}
+    return trailingslashit($path);
+}
 
-		controlBmc();
+function barnahus_bmc_is_allowed_page() {
+    return in_array(barnahus_bmc_current_path(), barnahus_bmc_allowed_paths(), true);
+}
 
-		new MutationObserver(controlBmc).observe(document.body, {
-			childList: true,
-			subtree: true
-		});
+function barnahus_remove_bmc_raw_widget_on_disallowed_pages() {
+    if (barnahus_bmc_is_allowed_page()) {
+        return;
+    }
 
-	})();
-	</script>
-	<?php
-});
+    global $wp_filter;
 
-// Show Buy Me a Coffee only on selected pages and style it.
-\add_action('wp_head', function () {
-	?>
-	<script>
-	(function () {
-		function styleBmc() {
-			var bmcButton = document.querySelector('#bmc-wbtn');
+    if (empty($wp_filter['wp_head']->callbacks) || !is_array($wp_filter['wp_head']->callbacks)) {
+        return;
+    }
 
-			if (bmcButton) {
-				bmcButton.style.setProperty('background', '#dce0f7', 'important');
-				bmcButton.style.setProperty('background-color', '#dce0f7', 'important');
-				bmcButton.style.setProperty('font-family', 'PT Serif', 'important');
-			}
+    foreach ($wp_filter['wp_head']->callbacks as $priority => $callbacks) {
+        foreach ($callbacks as $registered_callback) {
+            $callback = isset($registered_callback['function']) ? $registered_callback['function'] : null;
 
-			document.querySelectorAll('#bmc-wbtn *, #bmc-wbtn + div, #bmc-wbtn + div *')
-				.forEach(function (el) {
-					el.style.setProperty('font-family', 'PT Serif', 'important');
-				});
-		}
+            if (
+                !is_array($callback)
+                || !isset($callback[0], $callback[1])
+                || !is_object($callback[0])
+                || 'Buy_Me_A_Coffee_Admin' !== get_class($callback[0])
+                || 'header_widget' !== $callback[1]
+            ) {
+                continue;
+            }
 
-		styleBmc();
-		setInterval(styleBmc, 500);
-	})();
-	</script>
-	<?php
-});
+            remove_action('wp_head', $callback, $priority);
+            $GLOBALS['barnahus_bmc_raw_widget_removed'] = true;
+        }
+    }
+}
+add_action('wp', 'barnahus_remove_bmc_raw_widget_on_disallowed_pages', PHP_INT_MAX);
 
+function barnahus_dequeue_bmc_on_disallowed_pages() {
+    if (barnahus_bmc_is_allowed_page()) {
+        return;
+    }
 
-// Force Buy Me a Coffee styling immediately.
-add_action('wp_head', function () {
-	?>
-	<style>
-		#bmc-wbtn {
-			background: #dce0f7 !important;
-			background-color: #dce0f7 !important;
-		}
+    global $wp_scripts, $wp_styles;
 
-		#bmc-wbtn,
-		#bmc-wbtn *,
-		#bmc-wbtn + div,
-		#bmc-wbtn + div * {
-			font-family: "PT Serif", serif !important;
-		}
+    $dependency_queues = array(
+        'script' => $wp_scripts,
+        'style' => $wp_styles,
+    );
 
-		/* Buy Me a Coffee popup */
-		#bmc-wbtn + div {
-			font-size: 16px !important;
-			line-height: 1.45 !important;
-		}
-	</style>
-	<?php
-}, 1);
+    foreach ($dependency_queues as $asset_type => $dependencies) {
+        if (!is_object($dependencies) || !isset($dependencies->registered)) {
+            continue;
+        }
 
+        foreach ($dependencies->registered as $handle => $dependency) {
+            $source = isset($dependency->src) ? (string) $dependency->src : '';
+
+            if (false === stripos($source, 'buymeacoffee')) {
+                continue;
+            }
+
+            $GLOBALS['barnahus_bmc_asset_dequeued'] = true;
+
+            if ('script' === $asset_type) {
+                wp_dequeue_script($handle);
+                wp_deregister_script($handle);
+            } else {
+                wp_dequeue_style($handle);
+                wp_deregister_style($handle);
+            }
+        }
+    }
+}
+add_action('wp_enqueue_scripts', 'barnahus_dequeue_bmc_on_disallowed_pages', PHP_INT_MAX);
+
+function barnahus_render_bmc_styles() {
+    $allowed = barnahus_bmc_is_allowed_page();
+    ?>
+    <style id="barnahus-bmc-overrides">
+        <?php if (!$allowed) : ?>
+        #bmc-wbtn,
+        #bmc-iframe,
+        #bmc-wbtn + div,
+        #WidgetFloaterPanels {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        <?php else : ?>
+        #bmc-wbtn {
+            background: #dce0f7 !important;
+            background-color: #dce0f7 !important;
+        }
+
+        #bmc-wbtn,
+        #bmc-wbtn *,
+        #bmc-wbtn + div,
+        #bmc-wbtn + div * {
+            font-family: "PT Serif", serif !important;
+        }
+
+        #bmc-wbtn + div {
+            font-size: 16px !important;
+            line-height: 1.45 !important;
+        }
+        <?php endif; ?>
+    </style>
+    <?php
+}
+add_action('wp_head', 'barnahus_render_bmc_styles', 1);
+
+function barnahus_render_bmc_fallback() {
+    if (barnahus_bmc_is_allowed_page() || !empty($GLOBALS['barnahus_bmc_raw_widget_removed'])) {
+        return;
+    }
+    ?>
+    <script>
+    (function () {
+        const selectors = '#bmc-wbtn, #bmc-iframe, #bmc-wbtn + div, #WidgetFloaterPanels';
+        const hideWidget = function () {
+            document.querySelectorAll(selectors).forEach(function (element) {
+                element.hidden = true;
+                element.setAttribute('aria-hidden', 'true');
+            });
+        };
+
+        hideWidget();
+
+        const observer = new MutationObserver(hideWidget);
+        observer.observe(document.body, { childList: true, subtree: true });
+        window.setTimeout(function () {
+            hideWidget();
+            observer.disconnect();
+        }, 10000);
+    }());
+    </script>
+    <?php
+}
+add_action('wp_footer', 'barnahus_render_bmc_fallback', 100);

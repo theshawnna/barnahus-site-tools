@@ -2,11 +2,19 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PLUGIN_DIR="$ROOT_DIR/barnahus-site-tools"
+PLUGIN_NAME="barnahus-site-tools"
 ENV_FILE="$ROOT_DIR/.env"
+VERSION="$(tr -d '[:space:]' < "$ROOT_DIR/VERSION")"
+ZIP_FILE="$ROOT_DIR/dist/$PLUGIN_NAME-v$VERSION.zip"
+BACKUP_ROOT="$ROOT_DIR/../rollback-archives"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "Missing .env. Copy .env.example to .env and fill in your FTP details."
+  exit 1
+fi
+
+if ! command -v lftp >/dev/null 2>&1; then
+  echo "lftp is required for exact, rollback-ready deployments."
   exit 1
 fi
 
@@ -36,73 +44,56 @@ cd "$ROOT_DIR"
 echo "Running pre-deploy checks..."
 "$ROOT_DIR/scripts/check.sh"
 
-echo "Uploading barnahus-site-tools to $FTP_HOST:$FTP_REMOTE_PLUGIN_DIR"
+echo "Building the committed release package..."
+"$ROOT_DIR/scripts/build-zip.sh"
 
-curl_args=(
-  --fail
-  --silent
-  --show-error
-  --user "$FTP_USER:$FTP_PASSWORD"
-  --ftp-create-dirs
-)
+STAGING_DIR="$(mktemp -d "${TMPDIR:-/tmp}/barnahus-site-tools-deploy.XXXXXX")"
+BACKUP_DIR="$BACKUP_ROOT/$(date '+%Y-%m-%d-%H%M%S')-live-$PLUGIN_NAME-before-v$VERSION"
+trap 'rm -rf "$STAGING_DIR"' EXIT
+
+unzip -q "$ZIP_FILE" -d "$STAGING_DIR"
+DEPLOY_DIR="$STAGING_DIR/$PLUGIN_NAME"
+
+if [ ! -f "$DEPLOY_DIR/$PLUGIN_NAME.php" ]; then
+  echo "Release package is missing the main plugin file."
+  exit 1
+fi
+
+if [ -e "$DEPLOY_DIR/bqs-preview" ] || [ -e "$DEPLOY_DIR/bqs-preview-v2" ] || [ -e "$DEPLOY_DIR/includes/bqs-preview.php" ]; then
+  echo "The unfinished BQS preview must not be present in the default release."
+  exit 1
+fi
+
+lftp_host="${FTP_RESOLVE_IP:-$FTP_HOST}"
+lftp_settings="set cmd:fail-exit true; set net:max-retries 2; set net:timeout 20; "
 
 if [ "$FTP_PROTOCOL" = "ftps" ]; then
-  curl_args+=(--ssl-reqd)
-fi
+  lftp_settings+="set ftp:ssl-force true; set ftp:ssl-protect-data true; "
 
-if [ "${FTP_RESOLVE_IP:-}" != "" ]; then
-  curl_args+=(--resolve "$FTP_HOST:21:$FTP_RESOLVE_IP")
-fi
-
-while IFS= read -r -d '' file; do
-  rel="${file#$PLUGIN_DIR/}"
-  curl_protocol="$FTP_PROTOCOL"
-  if [ "$FTP_PROTOCOL" = "ftps" ]; then
-    curl_protocol="ftp"
+  if [ "${FTP_RESOLVE_IP:-}" != "" ]; then
+    lftp_settings+="set ssl:verify-certificate no; "
   fi
-  remote_url="$curl_protocol://$FTP_HOST$FTP_REMOTE_PLUGIN_DIR/$rel"
+fi
 
-  upload_attempt=1
-  until curl \
-    "${curl_args[@]}" \
-    --upload-file "$file" \
-    "$remote_url"
-  do
-    if [ "$upload_attempt" -ge 3 ]; then
-      if command -v lftp >/dev/null 2>&1; then
-        echo "Upload failed after $upload_attempt curl attempts: $rel"
-        echo "Trying lftp fallback for $rel..."
+mkdir -p "$BACKUP_DIR"
+echo "Downloading a live rollback copy to $BACKUP_DIR"
+(
+  cd "$BACKUP_DIR"
+  lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$lftp_host" -e \
+    "$lftp_settings mirror --verbose \"$FTP_REMOTE_PLUGIN_DIR\" .; bye"
+)
 
-        lftp_host="${FTP_RESOLVE_IP:-$FTP_HOST}"
-        lftp_remote_dir="$FTP_REMOTE_PLUGIN_DIR"
-        if [[ "$rel" == */* ]]; then
-          lftp_remote_dir="$FTP_REMOTE_PLUGIN_DIR/${rel%/*}"
-        fi
+if [ ! -f "$BACKUP_DIR/$PLUGIN_NAME.php" ]; then
+  echo "The live rollback copy is incomplete; deployment stopped before any upload."
+  exit 1
+fi
 
-        lftp_commands=""
-        if [ "$FTP_PROTOCOL" = "ftps" ]; then
-          lftp_commands="set ftp:ssl-force true; set ftp:ssl-protect-data true; "
-          if [ "${FTP_RESOLVE_IP:-}" != "" ]; then
-            lftp_commands+="set ssl:verify-certificate no; "
-          fi
-        fi
-        lftp_commands+="put -O $lftp_remote_dir $file; bye"
-
-        if lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$lftp_host" -e "$lftp_commands"; then
-          break
-        fi
-      fi
-
-      echo "Upload failed after $upload_attempt attempts: $rel"
-      exit 1
-    fi
-
-    upload_attempt=$((upload_attempt + 1))
-    echo "Upload failed for $rel. Retrying attempt $upload_attempt of 3..."
-    sleep 3
-  done
-
-  echo "Uploaded $rel"
-done < <(find "$PLUGIN_DIR" -type f ! -name '.DS_Store' -print0 | sort -z)
+echo "Deploying v$VERSION to $FTP_HOST:$FTP_REMOTE_PLUGIN_DIR"
+(
+  cd "$DEPLOY_DIR"
+  lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$lftp_host" -e \
+    "$lftp_settings mirror --reverse --delete --verbose . \"$FTP_REMOTE_PLUGIN_DIR\"; bye"
+)
 
 echo "FTP deploy complete."
+echo "Live rollback copy: $BACKUP_DIR"

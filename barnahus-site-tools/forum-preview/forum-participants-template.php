@@ -1,29 +1,39 @@
+<?php
+if (!defined('ABSPATH')) {
+    http_response_code(404);
+    exit;
+}
+?>
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Barnahus Forum 2026 Participants</title>
+  <title>Barnahus Forum 2026 participants</title>
   <style>
     :root {
-      --ink: #110b10;
-      --muted: #585858;
-      --paper: #f7f4f1;
+      --ink: #16131d;
+      --muted: #625f6f;
+      --paper: #fbf8f4;
       --surface: #ffffff;
-      --line: #d9d4cf;
+      --line: #dad5ce;
       --blue: #606ca5;
-      --blue-dark: #363457;
-      --blue-wash: #eceef8;
-      --cream: #fbf8f2;
-      --peach: #eeb6aa;
-      --soft-peach: #fbebe7;
-      --earth: #6b3327;
-      --green: #2f9e63;
-      --shadow: 0 12px 30px rgba(44, 43, 41, .11);
-      --radius: 4px;
-      --font-heading: Switzer, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --font-body: "PT Serif", Georgia, "Times New Roman", serif;
-      font-family: var(--font-heading);
+      --deep-blue: #3f4b86;
+      --blue-dark: var(--deep-blue);
+      --soft-blue: #eef1fb;
+      --blue-wash: var(--soft-blue);
+      --cream: #fffdf9;
+      --peach: #f6dfd8;
+      --soft-peach: #fff4f1;
+      --earth: #7f3b2d;
+      --green: #23775e;
+      --shadow: 0 16px 40px rgba(43, 39, 55, .1);
+      --radius: 8px;
+      --font: "Switzer", "Inter", "Helvetica Neue", Arial, sans-serif;
+      --font-heading: var(--font);
+      --font-body: var(--font);
+      --heading: var(--ink);
+      font-family: var(--font);
     }
 
     * { box-sizing: border-box; }
@@ -31,9 +41,14 @@
     body {
       background: var(--paper);
       color: var(--ink);
-      font-family: var(--font-heading);
+      font-family: var(--font);
+      font-size: 15px;
       line-height: 1.45;
       margin: 0;
+    }
+
+    body.viewer-open {
+      overflow: hidden;
     }
 
     a { color: inherit; }
@@ -41,27 +56,26 @@
     button, input { font: inherit; }
 
     .topbar {
-      backdrop-filter: blur(14px);
-      background: rgba(247, 244, 241, .96);
+      background: #fff;
       border-bottom: 1px solid var(--line);
       position: sticky;
       top: 0;
-      z-index: 5;
+      z-index: 20;
     }
 
     .topbar-inner {
       align-items: center;
       display: grid;
-      gap: 12px;
-      grid-template-columns: 1fr auto;
+      gap: 14px;
+      grid-template-columns: minmax(220px, 1fr) auto;
       margin: 0 auto;
-      max-width: 1180px;
-      padding: 12px 18px;
+      max-width: 1280px;
+      padding: 14px 18px;
     }
 
     .brand strong {
       display: block;
-      font-size: 15px;
+      font-size: 18px;
       line-height: 1.1;
     }
 
@@ -69,6 +83,7 @@
       color: var(--muted);
       display: block;
       font-size: 12px;
+      margin-top: 4px;
     }
 
     .top-actions {
@@ -80,67 +95,160 @@
 
     .top-actions::-webkit-scrollbar { display: none; }
 
-    .pill {
+    .pill,
+    .tab {
+      align-items: center;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: 999px;
       color: var(--ink);
       cursor: pointer;
+      display: inline-flex;
+      font-weight: 780;
       min-height: 38px;
-      padding: 8px 12px;
+      padding: 8px 14px;
       text-decoration: none;
       white-space: nowrap;
     }
 
+    .top-actions .pill,
+    .tab {
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      padding: 8px 6px;
+    }
+
     .pill.primary,
-    .pill[aria-current="page"] {
+    .tab[aria-current="page"] {
       background: var(--blue);
       border-color: var(--blue);
       color: #fff;
       font-weight: 800;
     }
 
+    .top-actions .pill[aria-current="page"] {
+      background: transparent;
+      border: 0;
+      box-shadow: inset 0 -3px 0 var(--deep-blue);
+      color: var(--deep-blue);
+      font-weight: 800;
+    }
+
+    .top-actions .pill:hover,
+    .top-actions .pill:focus-visible,
+    .tab:hover,
+    .tab:focus-visible {
+      color: var(--deep-blue);
+      outline: none;
+    }
+
+    .pill:hover,
+    .pill:focus-visible,
+    .text-button:hover,
+    .text-button:focus-visible,
+    .filter-button:hover,
+    .filter-button:focus-visible {
+      border-color: rgba(96, 108, 165, .48);
+      box-shadow: 0 0 0 3px rgba(96, 108, 165, .12);
+      outline: none;
+    }
+
+    .top-actions .pill:hover,
+    .top-actions .pill:focus-visible {
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .top-actions .pill[aria-current="page"],
+    .top-actions .pill[aria-current="page"]:hover,
+    .top-actions .pill[aria-current="page"]:focus-visible {
+      box-shadow: inset 0 -3px 0 var(--deep-blue);
+    }
+
     .hero {
-      background:
-        radial-gradient(circle at 88% 4%, rgba(96, 108, 165, .22), transparent 34%),
-        linear-gradient(120deg, rgba(228, 227, 236, .98), rgba(247, 244, 241, .94) 52%, rgba(96, 108, 165, .54));
-      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #eef1fb 0%, #fbf8f4 100%);
+      border-block: 1px solid var(--line);
+      margin: 0;
+      padding: 52px 18px;
+      scroll-margin-top: 96px;
     }
 
     .hero-inner {
-      display: block;
+      display: grid;
+      gap: 34px;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, .55fr);
       margin: 0 auto;
-      max-width: 1180px;
-      padding: 36px 18px 50px;
+      max-width: 1220px;
     }
 
     .eyebrow {
       font-size: 13px;
-      font-weight: 800;
-      letter-spacing: .08em;
+      font-weight: 850;
+      letter-spacing: .06em;
       text-transform: uppercase;
     }
 
     h1 {
-      font-size: clamp(34px, 6vw, 58px);
+      font-family: var(--font);
+      font-size: clamp(42px, 6vw, 72px);
       letter-spacing: 0;
-      line-height: 1;
-      margin: 8px 0 12px;
+      line-height: .96;
+      margin: 0 0 14px;
       max-width: 760px;
     }
 
     .hero-meta {
+      align-items: center;
       color: var(--muted);
-      display: block;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
       font-size: 13px;
       font-weight: 750;
       margin-top: 12px;
     }
 
+    .map-link {
+      color: var(--deep-blue);
+      font-weight: 850;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .hero-side {
+      align-content: start;
+      display: grid;
+      gap: 10px;
+    }
+
+    .hero-stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+    }
+
+    .hero-stat span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .hero-stat strong {
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.12;
+    }
+
     .page {
       margin: 0 auto;
-      max-width: 1180px;
-      padding: 22px 18px 56px;
+      max-width: 1220px;
+      padding: 18px;
     }
 
     .panel,
@@ -150,11 +258,10 @@
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
     }
 
     .section {
-      margin: 30px -18px 0;
+      margin: 18px -18px 0;
       padding: 30px 18px;
       scroll-margin-top: 92px;
     }
@@ -893,7 +1000,7 @@
     <div class="topbar-inner">
       <div class="brand">
         <strong>Barnahus Forum 2026</strong>
-        <span>Participant overview</span>
+        <span>24 November - Hamburg</span>
       </div>
       <nav class="top-actions" aria-label="Page links">
         <a class="pill" href="/forum/programme">Programme</a>
@@ -910,7 +1017,21 @@
     <div class="hero-inner">
       <div>
         <h1>About the participants</h1>
-        <span class="hero-meta">24 November 2026 · Hamburg · Last updated: 3 July 2026</span>
+        <div class="hero-meta">
+          <span>24 November 2026</span>
+          <a class="map-link" href="https://www.google.com/maps/place/Nord+Event+Panoramadeck/@53.5561899,9.9785809,740m/data=!3m3!1e3!4b1!5s0x47b18f21d3af575d:0xeab10e4e1eb5c6bf!4m6!3m5!1s0x4163bcb34dc214d7:0x700a7fef23e00f7a!8m2!3d53.55619!4d9.9834518!16s%2Fg%2F1hc1wqf9p?entry=ttu" target="_blank" rel="noopener">NordEvent Panoramadeck, Emporio, Dammtorwall 15, Hamburg</a>
+          <span class="pill">Last updated 11 July 2026</span>
+        </div>
+      </div>
+      <div class="hero-side" aria-label="Participant highlights">
+        <div class="hero-stat">
+          <span>Expected</span>
+          <strong>120+ participants</strong>
+        </div>
+        <div class="hero-stat">
+          <span>Represented</span>
+          <strong>31 delegations</strong>
+        </div>
       </div>
     </div>
   </section>
@@ -931,8 +1052,8 @@
           <span>participants expected</span>
         </div>
         <div class="snapshot-number">
-          <strong>27</strong>
-          <span>countries represented</span>
+          <strong>31</strong>
+          <span>delegations listed</span>
         </div>
       </div>
 
@@ -1068,7 +1189,7 @@
             <button class="filter-button" type="button" data-filter-group="quotes" data-filter="collaboration" aria-pressed="false">Collaboration</button>
           </div>
         </div>
-        <span class="result-count" id="quoteCount">Showing 0</span>
+        <span class="result-count" id="quoteCount" aria-live="polite">Showing 0</span>
       </div>
 
       <div class="featured-quotes" aria-label="Featured good news">
@@ -1207,7 +1328,7 @@
             <button class="filter-button" type="button" data-filter-group="pathways" data-filter="justice" aria-pressed="false">Justice-led</button>
           </div>
         </div>
-        <span class="result-count" id="pathwayCount">Showing 0</span>
+        <span class="result-count" id="pathwayCount" aria-live="polite">Showing 0</span>
       </div>
 
       <div class="poster-grid" id="pathwayGrid">
@@ -1274,12 +1395,12 @@
     <div class="viewer-dialog">
       <div class="viewer-head">
         <div>
-          <h3 id="viewerTitle">Pathway</h3>
+          <h2 id="viewerTitle">Pathway</h2>
           <p id="viewerSubtitle"></p>
         </div>
         <div class="viewer-nav" aria-label="Pathway navigation">
-          <button class="filter-button" type="button" id="previousPathway">‹</button>
-          <button class="filter-button" type="button" id="nextPathway">›</button>
+          <button class="filter-button" type="button" id="previousPathway" aria-label="Previous pathway">‹</button>
+          <button class="filter-button" type="button" id="nextPathway" aria-label="Next pathway">›</button>
         </div>
         <button class="text-button" type="button" id="closeViewer">Close</button>
       </div>
@@ -1305,6 +1426,7 @@
       pathways: { filter: "all" },
       activePathway: 0
     };
+    let lastFocusedBeforeViewer = null;
 
     const normalise = value => value.toLowerCase().trim();
 
@@ -1358,17 +1480,38 @@
       return [...document.querySelectorAll("[data-pathway-card]")].filter(card => !card.hidden);
     }
 
-    function openPathway(card) {
+    function openPathway(card, keepFocus = false) {
       const cards = pathwayCards();
       state.activePathway = Math.max(0, cards.indexOf(card));
       const image = card.dataset.image;
       const download = card.dataset.download;
+      const viewer = document.querySelector("#pathwayViewer");
+      const imageContainer = document.querySelector("#viewerImage");
+      const tagsContainer = document.querySelector("#viewerTags");
+
+      if (viewer.hidden) {
+        lastFocusedBeforeViewer = card;
+      }
+
       document.querySelector("#viewerTitle").textContent = card.dataset.title;
       document.querySelector("#viewerSubtitle").textContent = card.dataset.subtitle;
-      document.querySelector("#viewerImage").innerHTML = image
-        ? `<img src="${image}" alt="${card.dataset.title} pathway">`
-        : `<div class="poster-preview"><span>${card.dataset.title} pathway</span></div>`;
-      document.querySelector("#viewerTags").innerHTML = card.querySelector(".poster-tags").innerHTML;
+      imageContainer.replaceChildren();
+
+      if (image) {
+        const previewImage = document.createElement("img");
+        previewImage.src = image;
+        previewImage.alt = `${card.dataset.title} pathway`;
+        imageContainer.appendChild(previewImage);
+      } else {
+        const preview = document.createElement("div");
+        const label = document.createElement("span");
+        preview.className = "poster-preview";
+        label.textContent = `${card.dataset.title} pathway`;
+        preview.appendChild(label);
+        imageContainer.appendChild(preview);
+      }
+
+      tagsContainer.replaceChildren(...Array.from(card.querySelector(".poster-tags").children).map(tag => tag.cloneNode(true)));
       const downloadLink = document.querySelector("#downloadPathway");
       if (download) {
         downloadLink.href = download;
@@ -1380,15 +1523,37 @@
         downloadLink.textContent = "Download pending";
       }
       document.querySelector("#viewerZoom").value = "100";
-      document.querySelector("#viewerImage").style.setProperty("--viewer-zoom", "100%");
-      document.querySelector("#pathwayViewer").hidden = false;
+      imageContainer.style.setProperty("--viewer-zoom", "100%");
+      viewer.hidden = false;
+      document.body.classList.add("viewer-open");
+
+      if (!keepFocus) {
+        requestAnimationFrame(() => document.querySelector("#closeViewer").focus());
+      }
     }
 
     function movePathway(direction) {
       const cards = pathwayCards();
       if (!cards.length) return;
       state.activePathway = (state.activePathway + direction + cards.length) % cards.length;
-      openPathway(cards[state.activePathway]);
+      openPathway(cards[state.activePathway], true);
+    }
+
+    function closePathwayViewer() {
+      const viewer = document.querySelector("#pathwayViewer");
+      viewer.hidden = true;
+      document.body.classList.remove("viewer-open");
+
+      if (lastFocusedBeforeViewer instanceof HTMLElement && lastFocusedBeforeViewer.isConnected) {
+        lastFocusedBeforeViewer.focus();
+      }
+
+      lastFocusedBeforeViewer = null;
+    }
+
+    function viewerFocusableElements() {
+      return Array.from(document.querySelector("#pathwayViewer").querySelectorAll("a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex='-1'])"))
+        .filter(element => element.getClientRects().length);
     }
 
     document.querySelectorAll("[data-filter-group]").forEach(button => {
@@ -1404,7 +1569,10 @@
       card.addEventListener("click", () => openPathway(card));
     });
     document.querySelector("#closeViewer").addEventListener("click", () => {
-      document.querySelector("#pathwayViewer").hidden = true;
+      closePathwayViewer();
+    });
+    document.querySelector("#pathwayViewer").addEventListener("click", event => {
+      if (event.target === event.currentTarget) closePathwayViewer();
     });
     document.querySelector("#previousPathway").addEventListener("click", () => movePathway(-1));
     document.querySelector("#nextPathway").addEventListener("click", () => movePathway(1));
@@ -1417,9 +1585,34 @@
     document.addEventListener("keydown", event => {
       const viewer = document.querySelector("#pathwayViewer");
       if (viewer.hidden) return;
-      if (event.key === "Escape") viewer.hidden = true;
-      if (event.key === "ArrowLeft") movePathway(-1);
-      if (event.key === "ArrowRight") movePathway(1);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePathwayViewer();
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusable = viewerFocusableElements();
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+        return;
+      }
+      if (event.target.matches("input, textarea, select")) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        movePathway(-1);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        movePathway(1);
+      }
     });
 
     updateQuotes();

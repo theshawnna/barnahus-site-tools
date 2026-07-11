@@ -1,10 +1,10 @@
-# Barnahus Site Tools Workflow
+# Barnahus site tools workflow
 
 This repo contains the custom WordPress plugin for barnahus.eu.
 
 The deployable plugin is the inner `barnahus-site-tools/` folder. The outer folder is the Git checkout and should not be uploaded as the plugin itself.
 
-## Everyday Editing
+## Everyday editing
 
 1. Ask Codex for the change you want.
 2. Review the changed files.
@@ -22,7 +22,9 @@ The deployable plugin is the inner `barnahus-site-tools/` folder. The outer fold
 
 5. Upload the newest zip from `dist/` to WordPress.
 
-## Recommended WordPress Push
+The build only uses committed source. It stops if the deployable plug-in folder contains uncommitted or untracked files, which prevents local drafts from entering a release accidentally. The same commit produces the same release checksum on repeated builds.
+
+## Recommended WordPress push
 
 For the safest first version of this workflow, deploy manually through WordPress:
 
@@ -33,7 +35,7 @@ For the safest first version of this workflow, deploy manually through WordPress
 
 This keeps the live-site step deliberate while still letting Codex edit, check, and package the plugin.
 
-## FTP Deploy
+## FTP deployment
 
 If you want to deploy by FTP instead of uploading the zip manually:
 
@@ -51,11 +53,19 @@ If you want to deploy by FTP instead of uploading the zip manually:
    ./scripts/deploy-ftp.sh
    ```
 
-The FTP test uploads a temporary `codex-deploy-test.txt` file, confirms it exists, and removes it. The FTP deploy uploads the local `barnahus-site-tools/` plugin folder into the remote WordPress plugin directory. It does not upload the outer Git checkout, `dist/`, or your `.env` file.
+The FTP test uploads a temporary `codex-deploy-test.txt` file, confirms it exists, and removes it. The FTP deployment then:
+
+1. Runs all checks.
+2. Builds from the current commit.
+3. Downloads the live plug-in into `../rollback-archives/`.
+4. Stops before upload if that rollback copy is incomplete.
+5. Mirrors the approved release exactly, including removal of obsolete files.
+
+It does not upload the outer Git checkout, `dist/`, or your `.env` file. BQS publishing source belongs in the separate `barnahus-publishing` project, and the checks stop if a copy appears inside this plug-in.
 
 Prefer `ftps` in `.env` if your host supports it. Plain `ftp` sends credentials without encryption.
 
-## GitHub Flow
+## GitHub flow
 
 Use GitHub as the source of truth:
 
@@ -86,7 +96,7 @@ feature/short-description
 fix/short-description
 ```
 
-## Optional Direct Deploy Later
+## Optional direct deployment later
 
 Once the manual or FTP upload flow feels comfortable, this repo can be extended with one of these direct deploy options:
 
@@ -100,7 +110,7 @@ Before adding direct deploy, confirm:
 - WordPress path on the server
 - whether there is a staging site
 
-## Safety Checklist
+## Safety checklist
 
 Before deploying:
 

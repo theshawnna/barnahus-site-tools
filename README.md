@@ -1,5 +1,6 @@
-# barnahus-site-tools
-Tweaks to style and functions of barnahus.eu
+# Barnahus site tools
+
+Custom WordPress functionality for barnahus.eu.
 
 ## Local workflow
 
@@ -21,7 +22,11 @@ Pushing a tag like `v1.0.1` to GitHub builds a versioned release zip through Git
 
 See `WORKFLOW.md` for the full edit, review, package, and deploy workflow.
 
-Current plugin features include featured-post cards, Buy Me a Coffee styling, newsletter tracking URL helpers, and manual Barnahus event cards via `[barnahus_events]`.
+Current plugin features include featured-post cards, Buy Me a Coffee controls, newsletter tracking URL helpers, the Barnahus event calendar, and the gated Forum programme and participant pages.
+
+The Barnahus Quality Standards publishing work lives in the sibling `barnahus-publishing` project. It is deliberately not copied into this plug-in.
+
+The FTP deployment command builds from the committed release, downloads the current live plug-in as a timestamped rollback copy, and mirrors the release exactly so obsolete public files are removed.
 
 ## Newsletter link tracking
 

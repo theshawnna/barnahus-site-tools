@@ -11,6 +11,16 @@ cd "$ROOT_DIR"
 
 echo "Checking plugin files..."
 
+shell_files=()
+while IFS= read -r -d '' file; do
+  shell_files+=("$file")
+done < <(find "$ROOT_DIR/scripts" "$ROOT_DIR/tests" -type f -name '*.sh' -print0 | sort -z)
+
+for file in "${shell_files[@]}"; do
+  bash -n "$file"
+  echo "OK ${file#$ROOT_DIR/}"
+done
+
 if [ ! -f "$VERSION_FILE" ]; then
   echo "Missing VERSION file."
   exit 1
@@ -65,5 +75,11 @@ if [ "${#rtf_files[@]}" -gt 0 ]; then
   printf '%s\n' "${rtf_files[@]}"
   exit 1
 fi
+
+php "$ROOT_DIR/tests/events-taxonomy-test.php"
+php "$ROOT_DIR/tests/bmc-test.php"
+bash "$ROOT_DIR/tests/preview-safety-test.sh"
+
+git diff --check
 
 echo "Checks complete."

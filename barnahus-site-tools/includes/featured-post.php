@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 /**
  * Featured Post Shortcode
  *
@@ -30,23 +34,22 @@
  */
 function barnahus_featured_post_shortcode($atts) {
     $atts = shortcode_atts(
-    array(
-        'id' => '',
-        'heading' => 'h4',
-    ),
-    $atts,
-    'featured_post'
-);
+        array(
+            'id' => '',
+            'heading' => 'h3',
+        ),
+        $atts,
+        'featured_post'
+    );
 
     $post_id = absint($atts['id']);
-    
     $allowed_headings = array('h1', 'h2', 'h3', 'h4', 'h5', 'h6');
-
     $heading = strtolower($atts['heading']);
 
     if (!in_array($heading, $allowed_headings, true)) {
-    $heading = 'h3';
-}
+        $heading = 'h3';
+    }
+
     if (!$post_id) {
         return '';
     }
@@ -63,20 +66,18 @@ function barnahus_featured_post_shortcode($atts) {
         ? get_the_excerpt($post_id)
         : wp_trim_words(wp_strip_all_tags($post->post_content), 35);
 
+    barnahus_enqueue_featured_post_assets();
+
     ob_start();
     ?>
 
     <div class="bh-featured-post-card">
         <div class="bh-featured-post-content">
-            <?php
-echo '<' . esc_html($heading) . '>';
-?>
-    <a href="<?php echo esc_url($url); ?>">
-        <?php echo esc_html($title); ?>
-    </a>
-<?php
-echo '</' . esc_html($heading) . '>';
-?>
+            <<?php echo esc_html($heading); ?>>
+                <a href="<?php echo esc_url($url); ?>">
+                    <?php echo esc_html($title); ?>
+                </a>
+            </<?php echo esc_html($heading); ?>>
 
             <p><?php echo esc_html($excerpt); ?></p>
 
@@ -88,6 +89,20 @@ echo '</' . esc_html($heading) . '>';
 
     <?php
     return ob_get_clean();
+}
+
+function barnahus_enqueue_featured_post_assets() {
+    $stylesheet_path = dirname(__DIR__) . '/css/featured-post.css';
+    $version = file_exists($stylesheet_path)
+        ? (string) filemtime($stylesheet_path)
+        : BARNAHUS_SITE_TOOLS_VERSION;
+
+    wp_enqueue_style(
+        'barnahus-featured-post',
+        plugin_dir_url(dirname(__FILE__)) . 'css/featured-post.css',
+        array(),
+        $version
+    );
 }
 
 add_shortcode('featured_post', 'barnahus_featured_post_shortcode');
